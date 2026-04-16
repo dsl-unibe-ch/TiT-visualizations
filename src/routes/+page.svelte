@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { platform } from 'node:os';
-
 	const data = [
 		{
 			t: '2026-04-15T15:56:56Z',
