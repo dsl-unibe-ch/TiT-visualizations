@@ -13,10 +13,10 @@
 
 	// Group messages by chatname, sorted by first message time
 	const chatGroups = $derived.by(() => {
-		const groups = d3.group(data, (d) => d.chatname);
+		const groups = d3.group(data, (d: Message) => d.chatname);
 		return [...groups.entries()].sort((a, b) => {
-			const aFirst = d3.min(a[1], (d) => new Date(d.t).getTime()) ?? 0;
-			const bFirst = d3.min(b[1], (d) => new Date(d.t).getTime()) ?? 0;
+			const aFirst = d3.min(a[1], (d: Message) => new Date(d.t).getTime()) ?? 0;
+			const bFirst = d3.min(b[1], (d: Message) => new Date(d.t).getTime()) ?? 0;
 			return aFirst - bFirst;
 		});
 	});
@@ -29,7 +29,7 @@
 
 	// Extract the day from first message for scale domain
 	const dayStart = $derived.by(() => {
-		const firstTime = d3.min(data, (d) => new Date(d.t));
+		const firstTime = d3.min(data, (d: Message) => new Date(d.t));
 		if (!firstTime) return new Date();
 		return d3.utcDay.floor(firstTime);
 	});
@@ -46,7 +46,9 @@
 
 	// Colors
 	function directionColor(direction: string): string {
-		return direction === 'incoming' ? '#22c55e' : '#ef4444';
+		if (direction === 'incoming') return '#22c55e';
+		if (direction === 'not sent') return '#a3a3a3';
+		return '#ef4444';
 	}
 
 	function platformColor(platform: string): string {
@@ -132,13 +134,14 @@
 			<!-- Message blocks -->
 			{#each sorted as msg (msg.t)}
 				{@const msgTime = new Date(msg.t)}
-				<rect
-					x={xScale(msgTime)}
-					y={y - blockHeight / 2}
-					width={blockWidth}
-					height={blockHeight}
-					rx="2"
-					fill={directionColor(msg.direction)}
+				<circle
+					cx={xScale(msgTime)}
+					cy={y}
+					r={8}
+					fill={msg.direction === 'not sent' ? 'none' : directionColor(msg.direction)}
+					stroke={directionColor(msg.direction)}
+					stroke-width={msg.direction === 'not sent' ? 1.5 : 0}
+					stroke-dasharray={msg.direction === 'not sent' ? '3 2' : 'none'}
 				/>
 			{/each}
 		{/each}

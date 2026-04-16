@@ -49,6 +49,17 @@
 			n_revisions: 0
 		},
 		{
+			t: '2026-04-15T09:07:00Z',
+			t_video: 20,
+			direction: 'not sent',
+			author: 'Me',
+			chatname: 'Caro',
+			content: 'Actually nvm',
+			type: 'text',
+			platform: 'WhatsApp',
+			n_revisions: 0
+		},
+		{
 			t: '2026-04-15T09:25:00Z',
 			t_video: 45,
 			direction: 'incoming',
@@ -325,6 +336,17 @@
 			n_revisions: 0
 		},
 		{
+			t: '2026-04-15T10:20:00Z',
+			t_video: 178,
+			direction: 'not sent',
+			author: 'Me',
+			chatname: 'Tobias',
+			content: 'Maybe...',
+			type: 'text',
+			platform: 'Instagram',
+			n_revisions: 0
+		},
+		{
 			t: '2026-04-15T10:28:00Z',
 			t_video: 180,
 			direction: 'outgoing',
@@ -379,6 +401,17 @@
 			author: 'Adam',
 			chatname: 'Adam',
 			content: 'Sure, whats up?',
+			type: 'text',
+			platform: 'WhatsApp',
+			n_revisions: 0
+		},
+		{
+			t: '2026-04-15T15:07:00Z',
+			t_video: 338,
+			direction: 'not sent',
+			author: 'Me',
+			chatname: 'Adam',
+			content: 'Nvm figured it out',
 			type: 'text',
 			platform: 'WhatsApp',
 			n_revisions: 0
