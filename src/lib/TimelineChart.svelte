@@ -158,131 +158,191 @@
 			y: (chatRowIndex.get(msg.chatname) ?? 0) * rowHeight + rowHeight / 2
 		}));
 	});
+
+	// Tooltip state
+	let hoveredMsg: Message | null = $state(null);
+	let tooltipX = $state(0);
+	let tooltipY = $state(0);
+
+	function formatVideoTime(seconds: number): string {
+		const m = Math.floor(seconds / 60);
+		const s = Math.floor(seconds % 60);
+		return `${m}:${s.toString().padStart(2, '0')}`;
+	}
 </script>
 
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<svg
-	{width}
-	height={totalHeight}
-	class="timeline-chart"
-	bind:this={svgEl}
-	onwheel={handleWheel}
-	onpointerdown={handlePointerDown}
-	onpointermove={handlePointerMove}
-	onpointerup={handlePointerUp}
->
-	<!-- Fixed left labels -->
-	<g transform="translate(0, {margin.top})">
-		{#each chatGroups as [chatname, messages], i (chatname)}
-			{@const y = i * rowHeight + rowHeight / 2}
-			{@const platform = messages[0]?.platform ?? 'Unknown'}
+<div class="relative inline-block">
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<svg
+		{width}
+		height={totalHeight}
+		class="timeline-chart"
+		bind:this={svgEl}
+		onwheel={handleWheel}
+		onpointerdown={handlePointerDown}
+		onpointermove={handlePointerMove}
+		onpointerup={handlePointerUp}
+	>
+		<!-- Fixed left labels -->
+		<g transform="translate(0, {margin.top})">
+			{#each chatGroups as [chatname, messages], i (chatname)}
+				{@const y = i * rowHeight + rowHeight / 2}
+				{@const platform = messages[0]?.platform ?? 'Unknown'}
 
-			<!-- Platform icon -->
-			<circle cx={margin.left - 130} cy={y} r="12" fill={platformColor(platform)} opacity="0.9" />
-			<text
-				x={margin.left - 130}
-				y={y + 1}
-				text-anchor="middle"
-				dominant-baseline="middle"
-				font-size="10"
-				fill="white"
-				font-weight="bold"
-			>
-				{platform.charAt(0).toUpperCase()}
-			</text>
-
-			<!-- Chat name -->
-			<text
-				x={margin.left - 108}
-				{y}
-				dominant-baseline="middle"
-				font-size="13"
-				font-weight="600"
-				fill="var(--color-base-content)"
-			>
-				{chatname}
-			</text>
-		{/each}
-	</g>
-
-	<!-- Clipped timeline area -->
-	<defs>
-		<clipPath id="chart-clip">
-			<rect x={0} y={-margin.top} width={innerWidth} height={totalHeight} />
-		</clipPath>
-	</defs>
-
-	<g transform="translate({margin.left}, {margin.top})" clip-path="url(#chart-clip)">
-		<!-- Time axis ticks -->
-		{#each ticks as tick (tick.getTime())}
-			{@const tx = xScale(tick)}
-			<g transform="translate({tx}, 0)">
-				<line y1={-5} y2={chatNames.length * rowHeight} stroke="var(--color-base-300)" stroke-width="0.5" />
+				<!-- Platform icon -->
+				<circle cx={margin.left - 130} cy={y} r="12" fill={platformColor(platform)} opacity="0.9" />
 				<text
-					y={-10}
-					text-anchor="end"
-					transform="rotate(-45, 0, -10)"
-					font-size="11"
+					x={margin.left - 130}
+					y={y + 1}
+					text-anchor="middle"
+					dominant-baseline="middle"
+					font-size="10"
+					fill="white"
+					font-weight="bold"
+				>
+					{platform.charAt(0).toUpperCase()}
+				</text>
+
+				<!-- Chat name -->
+				<text
+					x={margin.left - 108}
+					{y}
+					dominant-baseline="middle"
+					font-size="13"
+					font-weight="600"
 					fill="var(--color-base-content)"
 				>
-					{timeFormat(tick)}
+					{chatname}
 				</text>
-			</g>
-		{/each}
-
-		<!-- Attention line -->
-		{#each attentionPath as point, i}
-			{#if i > 0}
-				<line
-					x1={attentionPath[i - 1].x}
-					y1={attentionPath[i - 1].y}
-					x2={point.x}
-					y2={point.y}
-					stroke="var(--color-neutral)"
-					stroke-width="1"
-					stroke-dasharray="4 3"
-					fill="none"
-				/>
-			{/if}
-		{/each}
-
-		<!-- Chat rows -->
-		{#each chatGroups as [chatname, messages], i (chatname)}
-			{@const y = i * rowHeight + rowHeight / 2}
-			{@const sorted = [...messages].sort(
-				(a, b) => new Date(a.t).getTime() - new Date(b.t).getTime()
-			)}
-
-			<!-- Message blocks -->
-			{#each sorted as msg (msg.t)}
-				{@const msgTime = new Date(msg.t)}
-				<circle
-					cx={xScale(msgTime)}
-					cy={y}
-					r={8}
-					fill={msg.direction === 'not sent' ? 'none' : directionColor(msg.direction)}
-					stroke={directionColor(msg.direction)}
-					stroke-width={msg.direction === 'not sent' ? 1.5 : 0}
-					stroke-dasharray={msg.direction === 'not sent' ? '3 2' : 'none'}
-				/>
 			{/each}
-		{/each}
-	</g>
+		</g>
 
-	<!-- Overview minimap -->
-	<g transform="translate({margin.left}, {mainChartHeight + overviewMarginTop})">
-		<TimelineMinimap
-			{chatGroups}
-			dayStart={domainStart}
-			dayEnd={domainEnd}
-			{innerWidth}
-			bind:zoomLevel
-			bind:panOffset
-			{minZoom}
-			{maxZoom}
-		/>
-	</g>
-</svg>
+		<!-- Clipped timeline area -->
+		<defs>
+			<clipPath id="chart-clip">
+				<rect x={0} y={-margin.top} width={innerWidth} height={totalHeight} />
+			</clipPath>
+		</defs>
+
+		<g transform="translate({margin.left}, {margin.top})" clip-path="url(#chart-clip)">
+			<!-- Time axis ticks -->
+			{#each ticks as tick (tick.getTime())}
+				{@const tx = xScale(tick)}
+				<g transform="translate({tx}, 0)">
+					<line
+						y1={-5}
+						y2={chatNames.length * rowHeight}
+						stroke="var(--color-base-300)"
+						stroke-width="0.5"
+					/>
+					<text
+						y={-10}
+						text-anchor="end"
+						transform="rotate(-45, 0, -10)"
+						font-size="11"
+						fill="var(--color-base-content)"
+					>
+						{timeFormat(tick)}
+					</text>
+				</g>
+			{/each}
+
+			<!-- Attention line -->
+			{#each attentionPath as point, i (point.x * point.y)}
+				{#if i > 0}
+					<line
+						x1={attentionPath[i - 1].x}
+						y1={attentionPath[i - 1].y}
+						x2={point.x}
+						y2={point.y}
+						stroke="var(--color-neutral)"
+						stroke-width="1"
+						stroke-dasharray="4 3"
+						fill="none"
+					/>
+				{/if}
+			{/each}
+
+			<!-- Chat rows -->
+			{#each chatGroups as [chatname, messages], i (chatname)}
+				{@const y = i * rowHeight + rowHeight / 2}
+				{@const sorted = [...messages].sort(
+					(a, b) => new Date(a.t).getTime() - new Date(b.t).getTime()
+				)}
+
+				<!-- Message blocks -->
+				{#each sorted as msg (msg.t)}
+					{@const msgTime = new Date(msg.t)}
+					<circle
+						cx={xScale(msgTime)}
+						cy={y}
+						r={8}
+						fill={directionColor(msg.direction)}
+						fill-opacity={msg.direction === 'not sent' ? 0.2 : 0.9}
+						stroke={directionColor(msg.direction)}
+						stroke-width={msg.direction === 'not sent' ? 1.5 : 0}
+						stroke-dasharray={msg.direction === 'not sent' ? '3 2' : 'none'}
+						class="cursor-pointer"
+						onpointerenter={() => {
+							hoveredMsg = msg;
+							tooltipX = xScale(msgTime);
+							tooltipY = y - 22;
+						}}
+						onpointerleave={() => {
+							hoveredMsg = null;
+						}}
+					/>
+				{/each}
+			{/each}
+		</g>
+
+		<!-- Overview minimap -->
+		<g transform="translate({margin.left}, {mainChartHeight + overviewMarginTop})">
+			<TimelineMinimap
+				{chatGroups}
+				dayStart={domainStart}
+				dayEnd={domainEnd}
+				{innerWidth}
+				bind:zoomLevel
+				bind:panOffset
+				{minZoom}
+				{maxZoom}
+			/>
+		</g>
+	</svg>
+
+	{#if hoveredMsg}
+		<div
+			class="pointer-events-none absolute z-10"
+			style="left: {margin.left + tooltipX}px; top: {margin.top + tooltipY}px;"
+		>
+			<div class="tooltip-open tooltip tooltip-top">
+				<div class="tooltip-content max-w-80 bg-neutral p-3 text-xs text-neutral-content shadow-lg">
+					<p class="mb-2 text-sm font-semibold wrap-break-word">"{hoveredMsg.content}"</p>
+					<dl class="grid grid-cols-[auto_1fr] justify-items-start gap-x-3 gap-y-0.5">
+						<dt class="opacity-70">Author</dt>
+						<dd>{hoveredMsg.author}</dd>
+						<dt class="opacity-70">Time</dt>
+						<dd>{timeFormat(new Date(hoveredMsg.t))}</dd>
+						<dt class="opacity-70">Direction</dt>
+						<dd class="capitalize">{hoveredMsg.direction}</dd>
+						<dt class="opacity-70">Platform</dt>
+						<dd>{hoveredMsg.platform}</dd>
+						<dt class="opacity-70">Type</dt>
+						<dd>{hoveredMsg.type}</dd>
+						<dt class="opacity-70">Video</dt>
+						<dd>{formatVideoTime(hoveredMsg.t_video)}</dd>
+						{#if hoveredMsg.n_revisions > 0}
+							<dt class="opacity-70">Revisions</dt>
+							<dd>{hoveredMsg.n_revisions}</dd>
+						{/if}
+					</dl>
+				</div>
+				<div class="h-0 w-0"></div>
+			</div>
+		</div>
+	{/if}
+</div>
 
 <style lang="postcss">
 	.timeline-chart {
