@@ -108,9 +108,9 @@
 
 		// Style
 		g.select('.selection')
-			.attr('fill', '#3b82f6')
+			.attr('fill', 'var(--color-secondary)')
 			.attr('fill-opacity', 0.25)
-			.attr('stroke', '#3b82f6')
+			.attr('stroke', 'var(--color-secondary)')
 			.attr('stroke-width', 1);
 	});
 
@@ -122,15 +122,23 @@
 	});
 
 	function directionColor(direction: string): string {
-		if (direction === 'incoming') return '#22c55e';
-		if (direction === 'not sent') return '#a3a3a3';
-		return '#ef4444';
+		if (direction === 'incoming') return 'var(--color-secondary)';
+		if (direction === 'not sent') return 'var(--color-neutral)';
+		return 'var(--color-primary)';
 	}
 </script>
 
 <g>
 	<!-- Background -->
-	<rect x={0} y={0} width={innerWidth} {height} rx="4" fill="#f9fafb" stroke="#e5e7eb" />
+	<rect
+		x={0}
+		y={0}
+		width={innerWidth}
+		{height}
+		rx="4"
+		fill="var(--color-base-200)"
+		stroke="var(--color-base-300)"
+	/>
 
 	<!-- Time ticks -->
 	{#each d3.utcHour.every(2)?.range(dayStart, dayEnd) ?? [] as tick (tick.getTime())}
@@ -139,7 +147,7 @@
 			x2={overviewXScale(tick)}
 			y1={0}
 			y2={height}
-			stroke="#e5e7eb"
+			stroke="var(--color-base-300)"
 			stroke-width="0.5"
 		/>
 	{/each}

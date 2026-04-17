@@ -522,8 +522,8 @@
 	];
 </script>
 
-<div class="min-h-screen bg-white p-8">
-	<h1 class="mb-6 text-2xl font-bold text-gray-900">Texting in Time — Timeline</h1>
+<div class="min-h-screen bg-base-100 p-8">
+	<h1 class="mb-6 text-2xl font-bold text-base-content">Texting in Time — Timeline</h1>
 	<div class="overflow-x-auto">
 		<TimelineChart {data} />
 	</div>

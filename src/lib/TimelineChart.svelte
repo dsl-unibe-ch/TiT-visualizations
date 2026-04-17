@@ -132,9 +132,9 @@
 
 	// Colors
 	function directionColor(direction: string): string {
-		if (direction === 'incoming') return '#22c55e';
-		if (direction === 'not sent') return '#a3a3a3';
-		return '#ef4444';
+		if (direction === 'incoming') return 'var(--color-secondary)';
+		if (direction === 'not sent') return 'var(--color-neutral)';
+		return 'var(--color-primary)';
 	}
 
 	function platformColor(platform: string): string {
@@ -198,7 +198,7 @@
 				dominant-baseline="middle"
 				font-size="13"
 				font-weight="600"
-				fill="#111827"
+				fill="var(--color-base-content)"
 			>
 				{chatname}
 			</text>
@@ -217,13 +217,13 @@
 		{#each ticks as tick (tick.getTime())}
 			{@const tx = xScale(tick)}
 			<g transform="translate({tx}, 0)">
-				<line y1={-5} y2={chatNames.length * rowHeight} stroke="#e5e7eb" stroke-width="0.5" />
+				<line y1={-5} y2={chatNames.length * rowHeight} stroke="var(--color-base-300)" stroke-width="0.5" />
 				<text
 					y={-10}
 					text-anchor="end"
 					transform="rotate(-45, 0, -10)"
 					font-size="11"
-					fill="#374151"
+					fill="var(--color-base-content)"
 				>
 					{timeFormat(tick)}
 				</text>
@@ -238,7 +238,7 @@
 					y1={attentionPath[i - 1].y}
 					x2={point.x}
 					y2={point.y}
-					stroke="#9ca3af"
+					stroke="var(--color-neutral)"
 					stroke-width="1"
 					stroke-dasharray="4 3"
 					fill="none"
