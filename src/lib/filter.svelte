@@ -86,7 +86,7 @@
 					<label class="label cursor-pointer justify-start gap-2 py-1">
 						<input
 							type="checkbox"
-							class="checkbox checkbox-sm checkbox-secondary"
+							class="checkbox checkbox-sm checkbox-primary"
 							checked={selectedTypes.includes(option)}
 							onchange={(event) =>
 								toggleType(option, (event.currentTarget as HTMLInputElement).checked)}
@@ -102,7 +102,7 @@
 					<label class="label cursor-pointer justify-start gap-2 py-1">
 						<input
 							type="checkbox"
-							class="checkbox checkbox-sm checkbox-accent"
+							class="checkbox checkbox-sm checkbox-primary"
 							checked={selectedPlatforms.includes(option)}
 							onchange={(event) =>
 								togglePlatform(option, (event.currentTarget as HTMLInputElement).checked)}
