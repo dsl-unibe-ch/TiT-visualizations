@@ -3,7 +3,15 @@
 	import type { Message } from '$lib/types';
 	import TimelineMinimap from '$lib/TimelineMinimap.svelte';
 
-	let { data }: { data: Message[] } = $props();
+	let {
+		data,
+		visibleStart = $bindable<Date | null>(null),
+		visibleEnd = $bindable<Date | null>(null)
+	}: {
+		data: Message[];
+		visibleStart: Date | null;
+		visibleEnd: Date | null;
+	} = $props();
 
 	// Layout constants
 	const margin = { top: 70, right: 40, bottom: 20, left: 160 };
@@ -63,6 +71,12 @@
 		const visibleStart = xScaleFull.invert(panOffset);
 		const visibleEnd = xScaleFull.invert(panOffset + innerWidth);
 		return d3.scaleTime().domain([visibleStart, visibleEnd]).range([0, innerWidth]);
+	});
+
+	$effect(() => {
+		const [start, end] = xScale.domain();
+		visibleStart = start;
+		visibleEnd = end;
 	});
 
 	// Dynamic tick interval based on zoom level

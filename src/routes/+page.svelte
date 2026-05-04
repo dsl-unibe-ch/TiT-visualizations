@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SelectedMessagesList from '$lib/SelectedMessagesList.svelte';
 	import TimelineFilters from '$lib/filter.svelte';
 	import TimelineChart from '$lib/TimelineChart.svelte';
 	import type { Message } from '$lib/types';
@@ -536,6 +537,8 @@
 	let selectedDirections = $state<Message['direction'][]>([...directionOptions]);
 	let selectedTypes = $state<string[]>([...typeOptions]);
 	let selectedPlatforms = $state<string[]>([...platformOptions]);
+	let visibleStart = $state<Date | null>(null);
+	let visibleEnd = $state<Date | null>(null);
 
 	const filteredData = $derived.by((): Message[] => {
 		return data.filter(
@@ -544,6 +547,18 @@
 				selectedTypes.includes(message.type) &&
 				selectedPlatforms.includes(message.platform)
 		);
+	});
+
+	const visibleData = $derived.by((): Message[] => {
+		if (!visibleStart || !visibleEnd) return filteredData;
+
+		const startMs = Math.min(visibleStart.getTime(), visibleEnd.getTime());
+		const endMs = Math.max(visibleStart.getTime(), visibleEnd.getTime());
+
+		return filteredData.filter((message) => {
+			const messageMs = new Date(message.t).getTime();
+			return messageMs >= startMs && messageMs <= endMs;
+		});
 	});
 
 	const hasResults = $derived(filteredData.length > 0);
@@ -562,13 +577,22 @@
 	/>
 
 	<p class="mb-4 text-sm text-base-content/70">
-		Showing {filteredData.length} of {data.length} messages
+		Showing {visibleData.length} visible messages ({filteredData.length} after filters, {data.length}
+		total)
 	</p>
 
 	{#if hasResults}
 		<div class="overflow-x-auto">
-			<TimelineChart data={filteredData} />
+			<TimelineChart data={filteredData} bind:visibleStart bind:visibleEnd />
 		</div>
+
+		{#if visibleData.length === 0}
+			<div role="status" class="mt-4 alert alert-soft alert-info">
+				<span>No filtered messages are visible in the current timeline viewport.</span>
+			</div>
+		{:else}
+			<SelectedMessagesList messages={visibleData} />
+		{/if}
 	{:else}
 		<div role="alert" class="alert alert-soft alert-warning">
 			<span>No messages match your filters. Adjust selections or reset all.</span>
