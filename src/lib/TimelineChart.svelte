@@ -16,7 +16,8 @@
 	// Layout constants
 	const margin = { top: 70, right: 40, bottom: 20, left: 160 };
 	const rowHeight = 50;
-	const width = 1400;
+	let width = $state(1400);
+	let containerEl: HTMLDivElement;
 
 	// Overview minimap constants
 	const overviewHeight = 50;
@@ -35,7 +36,7 @@
 	const chatNames = $derived(chatGroups.map(([name]) => name));
 
 	// Dimensions
-	const innerWidth = width - margin.left - margin.right;
+	const innerWidth = $derived(Math.max(1, width - margin.left - margin.right));
 	const mainChartHeight = $derived(margin.top + chatNames.length * rowHeight + margin.bottom);
 	const totalHeight = $derived(mainChartHeight + overviewMarginTop + overviewHeight + 10);
 
@@ -94,6 +95,23 @@
 	});
 
 	const timeFormat = d3.utcFormat('%H:%M');
+
+	$effect(() => {
+		if (!containerEl) return;
+
+		const updateWidth = () => {
+			width = Math.max(containerEl.clientWidth, margin.left + margin.right + 1);
+		};
+
+		updateWidth();
+
+		const observer = new ResizeObserver(updateWidth);
+		observer.observe(containerEl);
+
+		return () => {
+			observer.disconnect();
+		};
+	});
 
 	// Handle wheel zoom
 	let svgEl: SVGSVGElement;
@@ -185,7 +203,7 @@
 	}
 </script>
 
-<div class="relative inline-block">
+<div class="relative w-full" bind:this={containerEl}>
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<svg
 		{width}
