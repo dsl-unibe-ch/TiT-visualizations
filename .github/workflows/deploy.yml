@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: ['main']
+    branches: ["main"]
   workflow_dispatch:
 
 jobs:
@@ -10,10 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v5
+        uses: pnpm/action-setup@v6
         with:
           version: 10
 
@@ -26,18 +26,20 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: ingest data
+        run: pnpm ingest
       - name: build
         env:
-          BASE_PATH: '/${{ github.event.repository.name }}'
+          BASE_PATH: "/${{ github.event.repository.name }}"
           # BASE_PATH: ''
-          NODE_OPTIONS: '--max_old_space_size=9000'
+          NODE_OPTIONS: "--max_old_space_size=9000"
         run: |
           pnpm run build
 
       - name: Upload Artifacts
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v5
         with:
-          path: 'build/'
+          path: "build/"
 
   deploy:
     needs: build_site
@@ -54,4 +56,4 @@ jobs:
     steps:
       - name: Deploy
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
