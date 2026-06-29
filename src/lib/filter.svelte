@@ -5,16 +5,20 @@
 		directionOptions,
 		typeOptions,
 		platformOptions,
+		languageOptions,
 		selectedDirections = $bindable(),
 		selectedTypes = $bindable(),
-		selectedPlatforms = $bindable()
+		selectedPlatforms = $bindable(),
+		selectedLanguages = $bindable()
 	}: {
 		directionOptions: Message['direction'][];
 		typeOptions: string[];
 		platformOptions: string[];
+		languageOptions: string[];
 		selectedDirections: Message['direction'][];
 		selectedTypes: string[];
 		selectedPlatforms: string[];
+		selectedLanguages: string[];
 	} = $props();
 
 	function toggleValue<T extends string>(option: T, current: T[], checked: boolean): T[] {
@@ -36,10 +40,15 @@
 		selectedPlatforms = toggleValue(option, selectedPlatforms, checked);
 	}
 
+	function toggleLanguage(option: string, checked: boolean) {
+		selectedLanguages = toggleValue(option, selectedLanguages, checked);
+	}
+
 	function resetAll() {
 		selectedDirections = [...directionOptions];
 		selectedTypes = [...typeOptions];
 		selectedPlatforms = [...platformOptions];
+		selectedLanguages = [...languageOptions];
 	}
 
 	function toTitle(value: string): string {
@@ -52,7 +61,8 @@
 	const selectionSummary = $derived([
 		{ label: 'Direction', selected: selectedDirections.length, total: directionOptions.length },
 		{ label: 'Type', selected: selectedTypes.length, total: typeOptions.length },
-		{ label: 'Platform', selected: selectedPlatforms.length, total: platformOptions.length }
+		{ label: 'Platform', selected: selectedPlatforms.length, total: platformOptions.length },
+		{ label: 'Language', selected: selectedLanguages.length, total: languageOptions.length }
 	]);
 </script>
 
@@ -63,7 +73,7 @@
 			<button type="button" class="btn btn-ghost btn-sm" onclick={resetAll}>Reset all</button>
 		</div>
 
-		<div class="grid gap-4 md:grid-cols-3">
+		<div class="grid gap-4 md:grid-cols-4">
 			<fieldset class="fieldset rounded-box border border-base-300 bg-base-100 p-3">
 				<legend class="fieldset-legend text-sm">Direction</legend>
 				{#each directionOptions as option (option)}
@@ -106,6 +116,22 @@
 							checked={selectedPlatforms.includes(option)}
 							onchange={(event) =>
 								togglePlatform(option, (event.currentTarget as HTMLInputElement).checked)}
+						/>
+						<span>{toTitle(option)}</span>
+					</label>
+				{/each}
+			</fieldset>
+
+			<fieldset class="fieldset rounded-box border border-base-300 bg-base-100 p-3">
+				<legend class="fieldset-legend text-sm">Language</legend>
+				{#each languageOptions as option (option)}
+					<label class="label cursor-pointer justify-start gap-2 py-1">
+						<input
+							type="checkbox"
+							class="checkbox checkbox-sm checkbox-primary"
+							checked={selectedLanguages.includes(option)}
+							onchange={(event) =>
+								toggleLanguage(option, (event.currentTarget as HTMLInputElement).checked)}
 						/>
 						<span>{toTitle(option)}</span>
 					</label>

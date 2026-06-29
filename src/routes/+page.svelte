@@ -17,10 +17,14 @@
 	const platformOptions = [...new Set(data.map((message) => message.platform))].sort((a, b) =>
 		a.localeCompare(b)
 	);
+	const languageOptions = [
+		...new Set(data.filter((message) => message.language).map((message) => message.language!))
+	].sort((a, b) => (a ?? '').localeCompare(b ?? ''));
 
 	let selectedDirections = $state<Message['direction'][]>([...directionOptions]);
 	let selectedTypes = $state<string[]>([...typeOptions]);
 	let selectedPlatforms = $state<string[]>([...platformOptions]);
+	let selectedLanguages = $state<string[]>([...languageOptions]);
 	let visibleStart = $state<Date | null>(null);
 	let visibleEnd = $state<Date | null>(null);
 
@@ -36,7 +40,8 @@
 			({ message }) =>
 				selectedDirections.includes(message.direction) &&
 				selectedTypes.includes(message.type) &&
-				selectedPlatforms.includes(message.platform)
+				selectedPlatforms.includes(message.platform) &&
+				selectedLanguages.includes(message.language ?? '')
 		);
 	});
 
@@ -64,11 +69,13 @@
 
 	<TimelineFilters
 		{directionOptions}
+		{languageOptions}
 		{typeOptions}
 		{platformOptions}
 		bind:selectedDirections
 		bind:selectedTypes
 		bind:selectedPlatforms
+		bind:selectedLanguages
 	/>
 
 	<p class="mb-4 text-sm text-base-content/70">
