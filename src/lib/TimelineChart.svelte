@@ -14,7 +14,15 @@
 	} = $props();
 
 	// Layout constants
-	const margin = { top: 70, right: 40, bottom: 20, left: 160 };
+	const legendHeight = 105;
+	const legendWidth = 148;
+	const legendSectionPadding = 10;
+	const margin = {
+		top: 70,
+		right: 40,
+		bottom: 20,
+		left: 160
+	};
 	const rowHeight = 50;
 	let width = $state(1400);
 	let containerEl: HTMLDivElement;
@@ -45,7 +53,12 @@
 	// Dimensions
 	const innerWidth = $derived(Math.max(1, width - margin.left - margin.right));
 	const mainChartHeight = $derived(margin.top + chatNames.length * rowHeight + margin.bottom);
-	const totalHeight = $derived(mainChartHeight + overviewMarginTop + overviewHeight + 10);
+	const totalHeight = $derived(
+		mainChartHeight +
+			overviewMarginTop +
+			Math.max(overviewHeight, legendHeight) +
+			legendSectionPadding
+	);
 
 	// Extract the day from first message for scale domain
 	// Time domain: 1 hour before first message to 1 hour after last message
@@ -216,6 +229,13 @@
 		}
 	}
 
+	const legendItems = [
+		{ label: 'Incoming', color: directionColor('incoming'), style: 'solid' },
+		{ label: 'Outgoing', color: directionColor('outgoing'), style: 'solid' },
+		{ label: 'Not sent', color: directionColor('not sent'), style: 'dashed' },
+		{ label: 'Attention flow', color: 'var(--color-neutral)', style: 'line' }
+	] as const;
+
 	// Attention line: all messages sorted chronologically with their row y-position
 	const chatRowIndex = $derived(new Map(chatNames.map((name, i) => [name, i])));
 
@@ -261,6 +281,52 @@
 		onpointermove={handlePointerMove}
 		onpointerup={handlePointerUp}
 	>
+		<!-- Legend -->
+		<g transform="translate(8, {mainChartHeight + overviewMarginTop})">
+			<rect
+				x="0"
+				y="0"
+				width={legendWidth}
+				height={legendHeight}
+				rx="8"
+				fill="var(--color-base-100)"
+				stroke="var(--color-base-300)"
+				stroke-width="1"
+				opacity="0.96"
+			/>
+			<text x="12" y="20" font-size="12" font-weight="700" fill="var(--color-base-content)">
+				Legend
+			</text>
+			{#each legendItems as item, index (`${item.label}-${index}`)}
+				{@const y = 38 + index * 18}
+				{#if item.style === 'line'}
+					<line
+						x1="12"
+						y1={y}
+						x2="28"
+						y2={y}
+						stroke={item.color}
+						stroke-width="2"
+						stroke-dasharray="4 3"
+					/>
+				{:else}
+					<circle
+						cx="20"
+						cy={y}
+						r="6"
+						fill={item.color}
+						fill-opacity={item.style === 'dashed' ? 0.2 : 0.9}
+						stroke={item.color}
+						stroke-width={item.style === 'dashed' ? 1.5 : 0}
+						stroke-dasharray={item.style === 'dashed' ? '3 2' : 'none'}
+					/>
+				{/if}
+				<text x="34" y={y + 4} font-size="11" fill="var(--color-base-content)">
+					{item.label}
+				</text>
+			{/each}
+		</g>
+
 		<!-- Fixed left labels -->
 		<g transform="translate(0, {margin.top})">
 			{#each chatGroups as [chatname, messages], i (chatname)}
