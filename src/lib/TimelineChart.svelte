@@ -185,7 +185,13 @@
 
 	const attentionPath = $derived.by(() => {
 		const sorted = [...data].sort((a, b) => new Date(a.t).getTime() - new Date(b.t).getTime());
-		return sorted.map((msg) => ({
+		const seen = new Set<string>();
+		const filtered = sorted.filter((msg) => {
+			if (seen.has(msg.t)) return false;
+			seen.add(msg.t);
+			return true;
+		});
+		return filtered.map((msg) => ({
 			x: xScale(new Date(msg.t)),
 			y: (chatRowIndex.get(msg.chatname) ?? 0) * rowHeight + rowHeight / 2
 		}));
@@ -280,7 +286,7 @@
 			{/each}
 
 			<!-- Attention line -->
-			{#each attentionPath as point, i (point.x * point.y)}
+			{#each attentionPath as point, i (`${point.x}-${point.y}`)}
 				{#if i > 0}
 					<line
 						x1={attentionPath[i - 1].x}
@@ -303,7 +309,7 @@
 				)}
 
 				<!-- Message blocks -->
-				{#each sorted as msg (msg.t)}
+				{#each sorted as msg (msg.recording_id + msg.message_id)}
 					{@const msgTime = new Date(msg.t)}
 					<circle
 						cx={xScale(msgTime)}

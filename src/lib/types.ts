@@ -8,4 +8,7 @@ export type Message = {
 	type: string;
 	platform: string;
 	n_revisions: number;
+	language?: string;
+	recording_id: string;
+	message_id: string;
 };

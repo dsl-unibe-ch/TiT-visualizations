@@ -154,7 +154,7 @@
 
 	<!-- Mini message dots -->
 	{#each chatGroups as [chatname, messages] (chatname)}
-		{#each messages as msg (msg.t)}
+		{#each messages as msg (msg.recording_id + msg.message_id)}
 			<circle
 				cx={overviewXScale(new Date(msg.t))}
 				cy={yScale(chatname) ?? height / 2}
