@@ -14,8 +14,11 @@
 	} = $props();
 
 	// Layout constants
-	const legendHeight = 105;
-	const legendWidth = 148;
+	const legendWidth = 228;
+	const legendRowHeight = 18;
+	const legendSectionTitleHeight = 16;
+	const legendTopPadding = 28;
+	const legendBottomPadding = 10;
 	const legendSectionPadding = 10;
 	const margin = {
 		top: 70,
@@ -53,12 +56,6 @@
 	// Dimensions
 	const innerWidth = $derived(Math.max(1, width - margin.left - margin.right));
 	const mainChartHeight = $derived(margin.top + chatNames.length * rowHeight + margin.bottom);
-	const totalHeight = $derived(
-		mainChartHeight +
-			overviewMarginTop +
-			Math.max(overviewHeight, legendHeight) +
-			legendSectionPadding
-	);
 
 	// Extract the day from first message for scale domain
 	// Time domain: 1 hour before first message to 1 hour after last message
@@ -128,18 +125,7 @@
 	// Day boundaries for vertical separators
 	const dayBoundaries = $derived.by(() => {
 		const [domainStart, domainEnd] = xScale.domain();
-		const days: Date[] = [];
-		const date = new Date(domainStart);
-		date.setUTCHours(0, 0, 0, 0);
-		// Start from the first midnight at or after domainStart
-		if (date.getTime() < domainStart.getTime()) {
-			date.setUTCDate(date.getUTCDate() + 1);
-		}
-		while (date.getTime() < domainEnd.getTime()) {
-			days.push(new Date(date));
-			date.setUTCDate(date.getUTCDate() + 1);
-		}
-		return days;
+		return d3.utcDay.range(d3.utcDay.ceil(domainStart), domainEnd);
 	});
 
 	const timeFormat = d3.timeFormat('%H:%M');
@@ -211,30 +197,64 @@
 		isPanning = false;
 	}
 
-	// Colors
-	function directionColor(direction: string): string {
-		if (direction === 'incoming') return 'var(--color-primary)';
-		if (direction === 'not sent') return 'var(--color-neutral)';
-		return 'var(--color-secondary)'; // outgoing
-	}
+	const platforms = $derived.by(() => {
+		return Array.from(new Set(data.map((d) => d.platform).filter(Boolean))).sort(d3.ascending);
+	});
+
+	const platformColorScale = $derived.by(() => {
+		const domain = platforms.length > 0 ? platforms : ['Unknown'];
+		return d3.scaleOrdinal<string, string>(domain, d3.schemeCategory10);
+	});
 
 	function platformColor(platform: string): string {
-		switch (platform.toLowerCase()) {
-			case 'whatsapp':
-				return '#25D366';
-			case 'instagram':
-				return '#E1306C';
-			default:
-				return '#6b7280';
-		}
+		return platformColorScale(platform || 'Unknown');
 	}
 
-	const legendItems = [
-		{ label: 'Incoming', color: directionColor('incoming'), style: 'solid' },
-		{ label: 'Outgoing', color: directionColor('outgoing'), style: 'solid' },
-		{ label: 'Not sent', color: directionColor('not sent'), style: 'dashed' },
-		{ label: 'Attention flow', color: 'var(--color-neutral)', style: 'line' }
+	const shapeLegendItems = [
+		{ label: 'Incoming', direction: 'incoming', style: 'solid' },
+		{ label: 'Outgoing', direction: 'outgoing', style: 'solid' },
+		{ label: 'Not sent', direction: 'not sent', style: 'dashed' },
+		{ label: 'Attention flow', direction: null, style: 'line' }
 	] as const;
+
+	const platformLegendItems = $derived(
+		platforms.length > 0
+			? platforms.map((platform) => ({
+					label: platform,
+					color: platformColor(platform)
+				}))
+			: [{ label: 'Unknown', color: platformColor('Unknown') }]
+	);
+
+	const legendHeight = $derived.by(() => {
+		const shapeSectionHeight = shapeLegendItems.length * legendRowHeight;
+		const platformSectionHeight =
+			legendSectionTitleHeight + platformLegendItems.length * legendRowHeight;
+		return (
+			legendTopPadding +
+			shapeSectionHeight +
+			legendSectionPadding +
+			platformSectionHeight +
+			legendBottomPadding
+		);
+	});
+
+	const totalHeight = $derived(
+		mainChartHeight +
+			overviewMarginTop +
+			Math.max(overviewHeight, legendHeight) +
+			legendSectionPadding
+	);
+
+	function directionShapePath(direction: Message['direction'], size = 130): string {
+		const type =
+			direction === 'incoming'
+				? d3.symbolCircle
+				: direction === 'outgoing'
+					? d3.symbolTriangle
+					: d3.symbolSquare;
+		return d3.symbol().type(type).size(size)() ?? '';
+	}
 
 	// Attention line: all messages sorted chronologically with their row y-position
 	const chatRowIndex = $derived(new Map(chatNames.map((name, i) => [name, i])));
@@ -242,12 +262,12 @@
 	const chronologicalMessages = $derived.by(() => {
 		const flattened = chatGroups.flatMap(([, messages]) => messages);
 		const sorted = [...flattened].sort((a, b) => new Date(a.t).getTime() - new Date(b.t).getTime());
-		const seen = new Set<string>();
-		return sorted.filter((msg) => {
-			if (seen.has(msg.t)) return false;
-			seen.add(msg.t);
-			return true;
-		});
+		const firstByTimestamp = d3.rollup(
+			sorted,
+			(values) => values[0],
+			(msg) => msg.t
+		);
+		return Array.from(firstByTimestamp.values());
 	});
 
 	const attentionPath = $derived.by(() => {
@@ -297,30 +317,51 @@
 			<text x="12" y="20" font-size="12" font-weight="700" fill="var(--color-base-content)">
 				Legend
 			</text>
-			{#each legendItems as item, index (`${item.label}-${index}`)}
-				{@const y = 38 + index * 18}
+			{#each shapeLegendItems as item, index (`${item.label}-${index}`)}
+				{@const y = 38 + index * legendRowHeight}
 				{#if item.style === 'line'}
 					<line
 						x1="12"
 						y1={y}
 						x2="28"
 						y2={y}
-						stroke={item.color}
+						stroke="var(--color-neutral)"
 						stroke-width="2"
 						stroke-dasharray="4 3"
 					/>
 				{:else}
-					<circle
-						cx="20"
-						cy={y}
-						r="6"
-						fill={item.color}
+					<path
+						d={directionShapePath(item.direction, 80)}
+						transform="translate(20, {y})"
+						fill="var(--color-base-content)"
 						fill-opacity={item.style === 'dashed' ? 0.2 : 0.9}
-						stroke={item.color}
+						stroke="var(--color-base-content)"
 						stroke-width={item.style === 'dashed' ? 1.5 : 0}
 						stroke-dasharray={item.style === 'dashed' ? '3 2' : 'none'}
 					/>
 				{/if}
+				<text x="34" y={y + 4} font-size="11" fill="var(--color-base-content)">
+					{item.label}
+				</text>
+			{/each}
+
+			<text
+				x="12"
+				y={legendTopPadding + shapeLegendItems.length * legendRowHeight + legendSectionPadding + 12}
+				font-size="11"
+				font-weight="700"
+				fill="var(--color-base-content)"
+			>
+				Platforms
+			</text>
+			{#each platformLegendItems as item, index (`platform-${item.label}-${index}`)}
+				{@const y =
+					legendTopPadding +
+					shapeLegendItems.length * legendRowHeight +
+					legendSectionPadding +
+					26 +
+					index * legendRowHeight}
+				<circle cx="20" cy={y} r="5" fill={item.color} />
 				<text x="34" y={y + 4} font-size="11" fill="var(--color-base-content)">
 					{item.label}
 				</text>
@@ -441,13 +482,12 @@
 				<!-- Message blocks -->
 				{#each messages as msg (msg.recording_id + msg.message_id)}
 					{@const msgTime = new Date(msg.t)}
-					<circle
-						cx={xScale(msgTime)}
-						cy={y}
-						r={8}
-						fill={directionColor(msg.direction)}
+					<path
+						d={directionShapePath(msg.direction)}
+						transform="translate({xScale(msgTime)}, {y})"
+						fill={platformColor(msg.platform)}
 						fill-opacity={msg.direction === 'not sent' ? 0.2 : 0.9}
-						stroke={directionColor(msg.direction)}
+						stroke={platformColor(msg.platform)}
 						stroke-width={msg.direction === 'not sent' ? 1.5 : 0}
 						stroke-dasharray={msg.direction === 'not sent' ? '3 2' : 'none'}
 						class="cursor-pointer"
@@ -471,6 +511,7 @@
 				dayStart={domainStart}
 				dayEnd={domainEnd}
 				{innerWidth}
+				{platformColor}
 				bind:zoomLevel
 				bind:panOffset
 				{minZoom}

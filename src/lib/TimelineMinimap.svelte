@@ -7,6 +7,7 @@
 		dayStart,
 		dayEnd,
 		innerWidth,
+		platformColor,
 		zoomLevel = $bindable(1),
 		panOffset = $bindable(0),
 		minZoom,
@@ -16,6 +17,7 @@
 		dayStart: Date;
 		dayEnd: Date;
 		innerWidth: number;
+		platformColor: (platform: string) => string;
 		zoomLevel: number;
 		panOffset: number;
 		minZoom: number;
@@ -132,12 +134,6 @@
 		const sel = brushSelection;
 		d3.select(brushGroupEl).call(brush.move, sel);
 	});
-
-	function directionColor(direction: string): string {
-		if (direction === 'incoming') return 'var(--color-secondary)';
-		if (direction === 'not sent') return 'var(--color-neutral)';
-		return 'var(--color-primary)';
-	}
 </script>
 
 <g>
@@ -171,8 +167,8 @@
 				cx={overviewXScale(new Date(msg.t))}
 				cy={yScale(chatname) ?? height / 2}
 				r={2}
-				fill={msg.direction === 'not sent' ? 'none' : directionColor(msg.direction)}
-				stroke={msg.direction === 'not sent' ? directionColor(msg.direction) : 'none'}
+				fill={msg.direction === 'not sent' ? 'none' : platformColor(msg.platform)}
+				stroke={msg.direction === 'not sent' ? platformColor(msg.platform) : 'none'}
 				stroke-width={msg.direction === 'not sent' ? 0.8 : 0}
 				opacity="0.7"
 			/>
