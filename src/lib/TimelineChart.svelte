@@ -200,9 +200,9 @@
 
 	// Colors
 	function directionColor(direction: string): string {
-		if (direction === 'incoming') return 'var(--color-secondary)';
+		if (direction === 'incoming') return 'var(--color-primary)';
 		if (direction === 'not sent') return 'var(--color-neutral)';
-		return 'var(--color-primary)';
+		return 'var(--color-secondary)'; // outgoing
 	}
 
 	function platformColor(platform: string): string {
