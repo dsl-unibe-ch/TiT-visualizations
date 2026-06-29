@@ -105,7 +105,25 @@
 		return interval.range(domainStart, domainEnd);
 	});
 
+	// Day boundaries for vertical separators
+	const dayBoundaries = $derived.by(() => {
+		const [domainStart, domainEnd] = xScale.domain();
+		const days: Date[] = [];
+		const date = new Date(domainStart);
+		date.setUTCHours(0, 0, 0, 0);
+		// Start from the first midnight at or after domainStart
+		if (date.getTime() < domainStart.getTime()) {
+			date.setUTCDate(date.getUTCDate() + 1);
+		}
+		while (date.getTime() < domainEnd.getTime()) {
+			days.push(new Date(date));
+			date.setUTCDate(date.getUTCDate() + 1);
+		}
+		return days;
+	});
+
 	const timeFormat = d3.timeFormat('%H:%M');
+	const weekdayFormat = d3.timeFormat('%a');
 
 	$effect(() => {
 		if (!containerEl) return;
@@ -294,6 +312,33 @@
 						{timeFormat(tick)}
 					</text>
 				</g>
+			{/each}
+
+			<!-- Day separators and labels -->
+			{#each dayBoundaries as day (day.getTime())}
+				{@const dx = xScale(day)}
+				<!-- Vertical separator line -->
+				<line
+					x1={dx}
+					y1={-25}
+					x2={dx}
+					y2={chatNames.length * rowHeight}
+					stroke="var(--color-base-300)"
+					stroke-width="1.5"
+					stroke-dasharray="none"
+				/>
+				<!-- Weekday label -->
+				<text
+					x={dx}
+					y={-15}
+					text-anchor="middle"
+					dominant-baseline="middle"
+					font-size="12"
+					font-weight="600"
+					fill="var(--color-base-content)"
+				>
+					{weekdayFormat(day)}
+				</text>
 			{/each}
 
 			<!-- Attention line -->
