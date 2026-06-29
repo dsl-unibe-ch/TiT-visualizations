@@ -21,3 +21,9 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+src/lib/data/sessions/*
+
+src/lib/assets/data/~$*
+
+src/lib/data/manifest.ts
