@@ -24,6 +24,48 @@
 		return 'badge-primary';
 	}
 
+	function escapeCsvValue(value: unknown): string {
+		const str = value === null || value === undefined ? '' : String(value);
+		// Quote and escape if contains comma, quote, or newline
+		if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+			return `"${str.replace(/"/g, '""')}"`;
+		}
+		return str;
+	}
+
+	function toCsv(msgs: Message[]): string {
+		const headers = [
+			't',
+			't_video',
+			'direction',
+			'author',
+			'chatname',
+			'content',
+			'type',
+			'platform',
+			'n_revisions',
+			'language',
+			'recording_id',
+			'message_id'
+		];
+		const headerRow = headers.map(escapeCsvValue).join(',');
+		const rows = msgs.map((msg) =>
+			headers.map((key) => escapeCsvValue(msg[key as keyof Message])).join(',')
+		);
+		return [headerRow, ...rows].join('\r\n');
+	}
+
+	function downloadCsv(): void {
+		const csv = toCsv(messages);
+		const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement('a');
+		link.href = url;
+		link.download = `selected-messages-${messages.length}.csv`;
+		link.click();
+		URL.revokeObjectURL(url);
+	}
+
 	const pageSize = 100;
 	let visibleCount = $state(pageSize);
 
@@ -77,7 +119,33 @@
 	<div class="card-body gap-4 p-4">
 		<div class="flex flex-wrap items-center justify-between gap-2">
 			<h2 class="card-title text-base">Selected messages</h2>
-			<span class="badge badge-outline">{messages.length} items</span>
+			<div class="flex items-center gap-2">
+				<span class="badge badge-outline">{messages.length} items</span>
+				<button
+					onclick={downloadCsv}
+					disabled={messages.length === 0}
+					class="btn btn-sm btn-ghost"
+					title="Download selected messages as CSV"
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1em"
+						height="1em"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						class="inline-block"
+					>
+						<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+						<polyline points="7 10 12 15 17 10"></polyline>
+						<line x1="12" y1="15" x2="12" y2="3"></line>
+					</svg>
+					Export CSV
+				</button>
+			</div>
 		</div>
 
 		<div
