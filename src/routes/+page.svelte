@@ -24,25 +24,36 @@
 	let visibleStart = $state<Date | null>(null);
 	let visibleEnd = $state<Date | null>(null);
 
-	const filteredData = $derived.by((): Message[] => {
-		return data.filter(
-			(message) =>
+	const dataWithTime = $derived.by(() => {
+		return data.map((message) => ({
+			message,
+			ts: new Date(message.t).getTime()
+		}));
+	});
+
+	const filteredDataWithTime = $derived.by(() => {
+		return dataWithTime.filter(
+			({ message }) =>
 				selectedDirections.includes(message.direction) &&
 				selectedTypes.includes(message.type) &&
 				selectedPlatforms.includes(message.platform)
 		);
 	});
 
+	const filteredData = $derived(filteredDataWithTime.map(({ message }) => message));
+
 	const visibleData = $derived.by((): Message[] => {
-		if (!visibleStart || !visibleEnd) return filteredData;
+		if (!visibleStart || !visibleEnd) {
+			return [...filteredDataWithTime].sort((a, b) => a.ts - b.ts).map(({ message }) => message);
+		}
 
 		const startMs = Math.min(visibleStart.getTime(), visibleEnd.getTime());
 		const endMs = Math.max(visibleStart.getTime(), visibleEnd.getTime());
 
-		return filteredData.filter((message) => {
-			const messageMs = new Date(message.t).getTime();
-			return messageMs >= startMs && messageMs <= endMs;
-		});
+		return filteredDataWithTime
+			.filter(({ ts }) => ts >= startMs && ts <= endMs)
+			.sort((a, b) => a.ts - b.ts)
+			.map(({ message }) => message);
 	});
 
 	const hasResults = $derived(filteredData.length > 0);

@@ -26,11 +26,18 @@
 	// Group messages by chatname, sorted by first message time
 	const chatGroups = $derived.by(() => {
 		const groups = d3.group(data, (d: Message) => d.chatname);
-		return [...groups.entries()].sort((a, b) => {
-			const aFirst = d3.min(a[1], (d: Message) => new Date(d.t).getTime()) ?? 0;
-			const bFirst = d3.min(b[1], (d: Message) => new Date(d.t).getTime()) ?? 0;
-			return aFirst - bFirst;
-		});
+		return [...groups.entries()]
+			.map(([name, messages]) => {
+				const sortedMessages = [...messages].sort(
+					(a, b) => new Date(a.t).getTime() - new Date(b.t).getTime()
+				);
+				return [name, sortedMessages] as [string, Message[]];
+			})
+			.sort((a, b) => {
+				const aFirst = new Date(a[1][0]?.t ?? 0).getTime();
+				const bFirst = new Date(b[1][0]?.t ?? 0).getTime();
+				return aFirst - bFirst;
+			});
 	});
 
 	const chatNames = $derived(chatGroups.map(([name]) => name));
@@ -212,15 +219,19 @@
 	// Attention line: all messages sorted chronologically with their row y-position
 	const chatRowIndex = $derived(new Map(chatNames.map((name, i) => [name, i])));
 
-	const attentionPath = $derived.by(() => {
-		const sorted = [...data].sort((a, b) => new Date(a.t).getTime() - new Date(b.t).getTime());
+	const chronologicalMessages = $derived.by(() => {
+		const flattened = chatGroups.flatMap(([, messages]) => messages);
+		const sorted = [...flattened].sort((a, b) => new Date(a.t).getTime() - new Date(b.t).getTime());
 		const seen = new Set<string>();
-		const filtered = sorted.filter((msg) => {
+		return sorted.filter((msg) => {
 			if (seen.has(msg.t)) return false;
 			seen.add(msg.t);
 			return true;
 		});
-		return filtered.map((msg) => ({
+	});
+
+	const attentionPath = $derived.by(() => {
+		return chronologicalMessages.map((msg) => ({
 			x: xScale(new Date(msg.t)),
 			y: (chatRowIndex.get(msg.chatname) ?? 0) * rowHeight + rowHeight / 2
 		}));
@@ -360,12 +371,9 @@
 			<!-- Chat rows -->
 			{#each chatGroups as [chatname, messages], i (chatname)}
 				{@const y = i * rowHeight + rowHeight / 2}
-				{@const sorted = [...messages].sort(
-					(a, b) => new Date(a.t).getTime() - new Date(b.t).getTime()
-				)}
 
 				<!-- Message blocks -->
-				{#each sorted as msg (msg.recording_id + msg.message_id)}
+				{#each messages as msg (msg.recording_id + msg.message_id)}
 					{@const msgTime = new Date(msg.t)}
 					<circle
 						cx={xScale(msgTime)}

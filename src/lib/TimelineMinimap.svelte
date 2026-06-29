@@ -25,6 +25,7 @@
 	const chatNames = $derived(chatGroups.map(([name]) => name));
 
 	const height = 50;
+	const minimapDotLimit = 1200;
 
 	// Overview x scale (always full 24h)
 	const overviewXScale = $derived(d3.scaleTime().domain([dayStart, dayEnd]).range([0, innerWidth]));
@@ -35,6 +36,17 @@
 			.scalePoint()
 			.domain(chatNames)
 			.range([6, height - 6]);
+	});
+
+	const sampledChatGroups = $derived.by((): [string, Message[]][] => {
+		const totalMessages = chatGroups.reduce((sum, [, messages]) => sum + messages.length, 0);
+		if (totalMessages <= minimapDotLimit) return chatGroups;
+
+		const stride = Math.ceil(totalMessages / minimapDotLimit);
+		return chatGroups.map(([chatname, messages]) => [
+			chatname,
+			messages.filter((_, i) => i % stride === 0)
+		]);
 	});
 
 	// Brush selection in overview pixel coords
@@ -56,7 +68,7 @@
 				[0, 0],
 				[innerWidth, height]
 			])
-			.on('brush', (event: d3.D3BrushEvent<unknown>) => {
+			.on('end', (event: d3.D3BrushEvent<unknown>) => {
 				if (!event.sourceEvent) return;
 				const sel = event.selection as [number, number] | null;
 				if (!sel) return;
@@ -153,7 +165,7 @@
 	{/each}
 
 	<!-- Mini message dots -->
-	{#each chatGroups as [chatname, messages] (chatname)}
+	{#each sampledChatGroups as [chatname, messages] (chatname)}
 		{#each messages as msg (msg.recording_id + msg.message_id)}
 			<circle
 				cx={overviewXScale(new Date(msg.t))}
