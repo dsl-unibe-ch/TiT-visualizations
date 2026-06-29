@@ -164,6 +164,12 @@ function transformFile(fileName: string): { messages: Message[]; meta: SessionMe
 			);
 			continue;
 		}
+		if (!recordingId || !row.message_id) {
+			console.warn(
+				`${fileName}: skipping message ${row.message_id} (${recordingId}) — missing recording ID or message ID`
+			);
+			continue;
+		}
 
 		let videoSeconds = videoToSeconds(row.t_mmss);
 		if (videoSeconds === null && anchor?.videoSeconds !== null && anchor?.clockSeconds != null) {
@@ -185,8 +191,8 @@ function transformFile(fileName: string): { messages: Message[]; meta: SessionMe
 			platform: String(row.platform ?? '').trim(),
 			n_revisions: 0,
 			language: row.language ? String(row.language).trim() : undefined,
-			recording_id: recordingId || undefined,
-			message_id: row.message_id
+			recording_id: recordingId,
+			message_id: String(row.message_id).trim()
 		});
 	}
 
