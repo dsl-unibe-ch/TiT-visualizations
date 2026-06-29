@@ -94,7 +94,7 @@
 		return interval.range(domainStart, domainEnd);
 	});
 
-	const timeFormat = d3.utcFormat('%H:%M');
+	const timeFormat = d3.timeFormat('%H:%M');
 
 	$effect(() => {
 		if (!containerEl) return;

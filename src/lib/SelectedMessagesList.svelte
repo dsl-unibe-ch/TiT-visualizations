@@ -8,12 +8,11 @@
 	});
 
 	function formatTime(value: string): string {
-		return new Date(value).toLocaleTimeString('en-GB', {
-			hour: '2-digit',
-			minute: '2-digit',
-			hour12: false,
-			timeZone: 'UTC'
-		});
+		// `value` is a naive local wall-clock timestamp ("YYYY-MM-DDTHH:MM:SS",
+		// no timezone). Read HH:MM directly so the displayed time matches the
+		// recorded wall clock regardless of the viewer's timezone.
+		const match = value.match(/T(\d{2}):(\d{2})/);
+		return match ? `${match[1]}:${match[2]}` : value;
 	}
 
 	function toTitle(value: string): string {
