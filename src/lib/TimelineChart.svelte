@@ -372,25 +372,9 @@
 		<g transform="translate(0, {margin.top})">
 			{#each chatGroups as [chatname, messages], i (chatname)}
 				{@const y = i * rowHeight + rowHeight / 2}
-				{@const platform = messages[0]?.platform ?? 'Unknown'}
-
-				<!-- Platform icon -->
-				<circle cx={margin.left - 130} cy={y} r="12" fill={platformColor(platform)} opacity="0.9" />
-				<text
-					x={margin.left - 130}
-					y={y + 1}
-					text-anchor="middle"
-					dominant-baseline="middle"
-					font-size="10"
-					fill="white"
-					font-weight="bold"
-				>
-					{platform.charAt(0).toUpperCase()}
-				</text>
-
 				<!-- Chat name -->
 				<text
-					x={margin.left - 108}
+					x={12}
 					{y}
 					dominant-baseline="middle"
 					font-size="13"
