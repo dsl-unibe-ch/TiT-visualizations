@@ -80,16 +80,27 @@
 		visibleEnd = end;
 	});
 
-	// Dynamic tick interval based on zoom level
+	// Target number of ticks; the interval is the smallest "nice" step
+	// that keeps the count at or below this target.
+	const targetTickCount = 30;
+	const niceStepsMinutes = [1, 2, 5, 10, 15, 30, 60, 120, 180, 360, 720, 1440];
+
 	const ticks = $derived.by(() => {
 		const [domainStart, domainEnd] = xScale.domain();
 		const spanMinutes = (domainEnd.getTime() - domainStart.getTime()) / 60000;
 
+		const idealStep = spanMinutes / targetTickCount;
+		const step = niceStepsMinutes.find((s) => s >= idealStep) ?? niceStepsMinutes.at(-1)!;
+
+		// Use appropriate interval type based on step size
 		let interval: d3.TimeInterval;
-		if (spanMinutes <= 30) interval = d3.utcMinute.every(1)!;
-		else if (spanMinutes <= 120) interval = d3.utcMinute.every(5)!;
-		else if (spanMinutes <= 360) interval = d3.utcMinute.every(15)!;
-		else interval = d3.utcMinute.every(30)!;
+		if (step < 60) {
+			interval = d3.utcMinute.every(step)!;
+		} else if (step < 1440) {
+			interval = d3.utcHour.every(step / 60)!;
+		} else {
+			interval = d3.utcDay.every(step / 1440)!;
+		}
 
 		return interval.range(domainStart, domainEnd);
 	});
