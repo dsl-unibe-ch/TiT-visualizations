@@ -51,11 +51,8 @@
 			});
 	});
 
-	const chatNames = $derived(chatGroups.map(([name]) => name));
-
 	// Dimensions
 	const innerWidth = $derived(Math.max(1, width - margin.left - margin.right));
-	const mainChartHeight = $derived(margin.top + chatNames.length * rowHeight + margin.bottom);
 
 	// Extract the day from first message for scale domain
 	// Time domain: 1 hour before first message to 1 hour after last message
@@ -96,6 +93,22 @@
 		visibleStart = start;
 		visibleEnd = end;
 	});
+
+	// Only show chats that have at least one message within the visible time window
+	const visibleChatGroups = $derived.by(() => {
+		const [start, end] = xScale.domain();
+		const startMs = start.getTime();
+		const endMs = end.getTime();
+		return chatGroups.filter(([, messages]) =>
+			messages.some((msg) => {
+				const t = new Date(msg.t).getTime();
+				return t >= startMs && t <= endMs;
+			})
+		);
+	});
+
+	const chatNames = $derived(visibleChatGroups.map(([name]) => name));
+	const mainChartHeight = $derived(margin.top + chatNames.length * rowHeight + margin.bottom);
 
 	// Target number of ticks; the interval is the smallest "nice" step
 	// that keeps the count at or below this target.
@@ -250,7 +263,7 @@
 	const chatRowIndex = $derived(new Map(chatNames.map((name, i) => [name, i])));
 
 	const chronologicalMessages = $derived.by(() => {
-		const flattened = chatGroups.flatMap(([, messages]) => messages);
+		const flattened = visibleChatGroups.flatMap(([, messages]) => messages);
 		const sorted = [...flattened].sort((a, b) => new Date(a.t).getTime() - new Date(b.t).getTime());
 		const firstByTimestamp = d3.rollup(
 			sorted,
@@ -381,7 +394,7 @@
 
 		<!-- Fixed left labels -->
 		<g transform="translate(0, {margin.top})">
-			{#each chatGroups as [chatname, messages], i (chatname)}
+			{#each visibleChatGroups as [chatname, messages], i (chatname)}
 				{@const y = i * rowHeight + rowHeight / 2}
 				<!-- Chat name -->
 				<text
@@ -459,7 +472,7 @@
 				/>
 
 				<!-- Chat rows -->
-				{#each chatGroups as [chatname, messages], i (chatname)}
+				{#each visibleChatGroups as [chatname, messages], i (chatname)}
 					{@const y = i * rowHeight + rowHeight / 2}
 
 					<!-- Message blocks -->
