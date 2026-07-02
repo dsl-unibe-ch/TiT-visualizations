@@ -246,16 +246,6 @@
 			legendSectionPadding
 	);
 
-	function directionShapePath(direction: Message['direction'], size = 130): string {
-		const type =
-			direction === 'incoming'
-				? d3.symbolCircle
-				: direction === 'outgoing'
-					? d3.symbolTriangle
-					: d3.symbolSquare;
-		return d3.symbol().type(type).size(size)() ?? '';
-	}
-
 	// Attention line: all messages sorted chronologically with their row y-position
 	const chatRowIndex = $derived(new Map(chatNames.map((name, i) => [name, i])));
 
@@ -290,6 +280,33 @@
 </script>
 
 <div class="relative w-full" bind:this={containerEl}>
+	<!--
+		Message/legend glyphs rendered as native SVG primitives (circle, triangle,
+		square) instead of d3.symbol()-generated <path> strings.
+	-->
+	{#snippet directionShape(direction: Message['direction'], size: number, color: string)}
+		{#if direction === 'incoming'}
+			<circle r={Math.sqrt(size / Math.PI)} fill={color} fill-opacity="0.9" />
+		{:else if direction === 'outgoing'}
+			{@const ty = Math.sqrt(size / (3 * Math.sqrt(3)))}
+			{@const tx = Math.sqrt(3) * ty}
+			<polygon points="0,{-2 * ty} {tx},{ty} {-tx},{ty}" fill={color} fill-opacity="0.9" />
+		{:else}
+			{@const w = Math.sqrt(size)}
+			<rect
+				x={-w / 2}
+				y={-w / 2}
+				width={w}
+				height={w}
+				fill={color}
+				fill-opacity="0.2"
+				stroke={color}
+				stroke-width="1.5"
+				stroke-dasharray="3 2"
+			/>
+		{/if}
+	{/snippet}
+
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<svg
 		{width}
@@ -330,15 +347,9 @@
 						stroke-dasharray="4 3"
 					/>
 				{:else}
-					<path
-						d={directionShapePath(item.direction, 80)}
-						transform="translate(20, {y})"
-						fill="var(--color-base-content)"
-						fill-opacity={item.style === 'dashed' ? 0.2 : 0.9}
-						stroke="var(--color-base-content)"
-						stroke-width={item.style === 'dashed' ? 1.5 : 0}
-						stroke-dasharray={item.style === 'dashed' ? '3 2' : 'none'}
-					/>
+					<g transform="translate(20, {y})">
+						{@render directionShape(item.direction!, 80, 'var(--color-base-content)')}
+					</g>
 				{/if}
 				<text x="34" y={y + 4} font-size="11" fill="var(--color-base-content)">
 					{item.label}
@@ -466,14 +477,9 @@
 				<!-- Message blocks -->
 				{#each messages as msg (msg.recording_id + msg.message_id)}
 					{@const msgTime = new Date(msg.t)}
-					<path
-						d={directionShapePath(msg.direction)}
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
+					<g
 						transform="translate({xScale(msgTime)}, {y})"
-						fill={platformColor(msg.platform)}
-						fill-opacity={msg.direction === 'not sent' ? 0.2 : 0.9}
-						stroke={platformColor(msg.platform)}
-						stroke-width={msg.direction === 'not sent' ? 1.5 : 0}
-						stroke-dasharray={msg.direction === 'not sent' ? '3 2' : 'none'}
 						class="cursor-pointer"
 						onpointerenter={() => {
 							hoveredMsg = msg;
@@ -483,7 +489,9 @@
 						onpointerleave={() => {
 							hoveredMsg = null;
 						}}
-					/>
+					>
+						{@render directionShape(msg.direction, 130, platformColor(msg.platform))}
+					</g>
 				{/each}
 			{/each}
 		</g>
