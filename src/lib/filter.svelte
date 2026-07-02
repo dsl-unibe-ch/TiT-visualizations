@@ -32,26 +32,6 @@
 		return current.filter((value) => value !== option);
 	}
 
-	function toggleDirection(option: Message['direction'], checked: boolean) {
-		selectedDirections = toggleValue(option, selectedDirections, checked);
-	}
-
-	function toggleType(option: string, checked: boolean) {
-		selectedTypes = toggleValue(option, selectedTypes, checked);
-	}
-
-	function togglePlatform(option: string, checked: boolean) {
-		selectedPlatforms = toggleValue(option, selectedPlatforms, checked);
-	}
-
-	function toggleLanguage(option: string, checked: boolean) {
-		selectedLanguages = toggleValue(option, selectedLanguages, checked);
-	}
-
-	function toggleChat(option: string, checked: boolean) {
-		selectedChats = toggleValue(option, selectedChats, checked);
-	}
-
 	function resetAll() {
 		selectedDirections = [...directionOptions];
 		selectedTypes = [...typeOptions];
@@ -67,110 +47,128 @@
 			.join(' ');
 	}
 
-	const selectionSummary = $derived([
-		{ label: 'Direction', selected: selectedDirections.length, total: directionOptions.length },
-		{ label: 'Type', selected: selectedTypes.length, total: typeOptions.length },
-		{ label: 'Platform', selected: selectedPlatforms.length, total: platformOptions.length },
-		{ label: 'Language', selected: selectedLanguages.length, total: languageOptions.length },
-		{ label: 'Chat', selected: selectedChats.length, total: chatOptions.length }
+	type FilterDescriptor = {
+		label: string;
+		options: string[];
+		selected: string[];
+		toggle: (option: string, checked: boolean) => void;
+		setAll: (checked: boolean) => void;
+		format: (value: string) => string;
+	};
+
+	const filters = $derived<FilterDescriptor[]>([
+		{
+			label: 'Direction',
+			options: directionOptions,
+			selected: selectedDirections,
+			toggle: (option, checked) =>
+				(selectedDirections = toggleValue(
+					option as Message['direction'],
+					selectedDirections,
+					checked
+				)),
+			setAll: (checked) => (selectedDirections = checked ? [...directionOptions] : []),
+			format: toTitle
+		},
+		{
+			label: 'Type',
+			options: typeOptions,
+			selected: selectedTypes,
+			toggle: (option, checked) => (selectedTypes = toggleValue(option, selectedTypes, checked)),
+			setAll: (checked) => (selectedTypes = checked ? [...typeOptions] : []),
+			format: toTitle
+		},
+		{
+			label: 'Platform',
+			options: platformOptions,
+			selected: selectedPlatforms,
+			toggle: (option, checked) =>
+				(selectedPlatforms = toggleValue(option, selectedPlatforms, checked)),
+			setAll: (checked) => (selectedPlatforms = checked ? [...platformOptions] : []),
+			format: toTitle
+		},
+		{
+			label: 'Language',
+			options: languageOptions,
+			selected: selectedLanguages,
+			toggle: (option, checked) =>
+				(selectedLanguages = toggleValue(option, selectedLanguages, checked)),
+			setAll: (checked) => (selectedLanguages = checked ? [...languageOptions] : []),
+			format: toTitle
+		},
+		{
+			label: 'Chat',
+			options: chatOptions,
+			selected: selectedChats,
+			toggle: (option, checked) => (selectedChats = toggleValue(option, selectedChats, checked)),
+			setAll: (checked) => (selectedChats = checked ? [...chatOptions] : []),
+			format: (value) => value
+		}
 	]);
 </script>
 
-<div class="card mb-5 bg-base-200/40 card-border">
-	<div class="card-body gap-4 p-4">
-		<div class="flex flex-wrap items-center justify-between gap-3">
-			<h2 class="card-title text-base">Filters</h2>
-			<button type="button" class="btn btn-ghost btn-sm" onclick={resetAll}>Reset all</button>
-		</div>
-
-		<div class="grid gap-4 md:grid-cols-5">
-			<fieldset class="fieldset rounded-box border border-base-300 bg-base-100 p-3">
-				<legend class="fieldset-legend text-sm">Direction</legend>
-				{#each directionOptions as option (option)}
-					<label class="label cursor-pointer justify-start gap-2 py-1">
-						<input
-							type="checkbox"
-							class="checkbox checkbox-sm checkbox-primary"
-							checked={selectedDirections.includes(option)}
-							onchange={(event) =>
-								toggleDirection(option, (event.currentTarget as HTMLInputElement).checked)}
-						/>
-						<span>{toTitle(option)}</span>
-					</label>
-				{/each}
-			</fieldset>
-
-			<fieldset class="fieldset rounded-box border border-base-300 bg-base-100 p-3">
-				<legend class="fieldset-legend text-sm">Type</legend>
-				{#each typeOptions as option (option)}
-					<label class="label cursor-pointer justify-start gap-2 py-1">
-						<input
-							type="checkbox"
-							class="checkbox checkbox-sm checkbox-primary"
-							checked={selectedTypes.includes(option)}
-							onchange={(event) =>
-								toggleType(option, (event.currentTarget as HTMLInputElement).checked)}
-						/>
-						<span>{toTitle(option)}</span>
-					</label>
-				{/each}
-			</fieldset>
-
-			<fieldset class="fieldset rounded-box border border-base-300 bg-base-100 p-3">
-				<legend class="fieldset-legend text-sm">Platform</legend>
-				{#each platformOptions as option (option)}
-					<label class="label cursor-pointer justify-start gap-2 py-1">
-						<input
-							type="checkbox"
-							class="checkbox checkbox-sm checkbox-primary"
-							checked={selectedPlatforms.includes(option)}
-							onchange={(event) =>
-								togglePlatform(option, (event.currentTarget as HTMLInputElement).checked)}
-						/>
-						<span>{toTitle(option)}</span>
-					</label>
-				{/each}
-			</fieldset>
-
-			<fieldset class="fieldset rounded-box border border-base-300 bg-base-100 p-3">
-				<legend class="fieldset-legend text-sm">Language</legend>
-				{#each languageOptions as option (option)}
-					<label class="label cursor-pointer justify-start gap-2 py-1">
-						<input
-							type="checkbox"
-							class="checkbox checkbox-sm checkbox-primary"
-							checked={selectedLanguages.includes(option)}
-							onchange={(event) =>
-								toggleLanguage(option, (event.currentTarget as HTMLInputElement).checked)}
-						/>
-						<span>{toTitle(option)}</span>
-					</label>
-				{/each}
-			</fieldset>
-
-			<fieldset class="fieldset rounded-box border border-base-300 bg-base-100 p-3">
-				<legend class="fieldset-legend text-sm">Chat</legend>
-				{#each chatOptions as option (option)}
-					<label class="label cursor-pointer justify-start gap-2 py-1">
-						<input
-							type="checkbox"
-							class="checkbox checkbox-sm checkbox-primary"
-							checked={selectedChats.includes(option)}
-							onchange={(event) =>
-								toggleChat(option, (event.currentTarget as HTMLInputElement).checked)}
-						/>
-						<span>{option}</span>
-					</label>
-				{/each}
-			</fieldset>
-		</div>
-
-		<div class="flex flex-wrap gap-2">
-			{#each selectionSummary as item (item.label)}
-				<span class="badge badge-outline">
-					{item.label}: {item.selected}/{item.total}
-				</span>
-			{/each}
-		</div>
+<div class="mb-5 flex flex-wrap items-start gap-2 lg:flex-col">
+	<div class="flex w-full items-center justify-between gap-2 lg:mb-1">
+		<h2 class="text-sm font-semibold text-base-content/70">Filters</h2>
+		<button type="button" class="btn btn-ghost btn-xs" onclick={resetAll}>Reset all</button>
 	</div>
+
+	{#each filters as filter (filter.label)}
+		<div class="dropdown lg:w-full">
+			<div
+				tabindex="0"
+				role="button"
+				class="btn w-full justify-between btn-outline btn-sm font-normal"
+			>
+				<span>{filter.label}</span>
+				<span
+					class="badge badge-sm"
+					class:badge-primary={filter.selected.length > 0 &&
+						filter.selected.length < filter.options.length}
+					class:badge-ghost={filter.selected.length === filter.options.length}
+					class:badge-error={filter.selected.length === 0}
+				>
+					{filter.selected.length}/{filter.options.length}
+				</span>
+			</div>
+			<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+			<div
+				tabindex="0"
+				class="dropdown-content z-10 mt-1 w-56 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
+			>
+				<div class="mb-1 flex gap-1">
+					<button
+						type="button"
+						class="btn grow btn-ghost btn-xs"
+						onclick={() => filter.setAll(true)}
+					>
+						All
+					</button>
+					<button
+						type="button"
+						class="btn grow btn-ghost btn-xs"
+						onclick={() => filter.setAll(false)}
+					>
+						None
+					</button>
+				</div>
+				<ul class="max-h-64 overflow-y-auto">
+					{#each filter.options as option (option)}
+						<li>
+							<label class="label cursor-pointer justify-start gap-2 py-1">
+								<input
+									type="checkbox"
+									class="checkbox checkbox-xs checkbox-primary"
+									checked={filter.selected.includes(option)}
+									onchange={(event) =>
+										filter.toggle(option, (event.currentTarget as HTMLInputElement).checked)}
+								/>
+								<span class="text-sm">{filter.format(option)}</span>
+							</label>
+						</li>
+					{/each}
+				</ul>
+			</div>
+		</div>
+	{/each}
 </div>

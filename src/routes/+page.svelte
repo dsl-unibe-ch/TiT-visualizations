@@ -72,39 +72,45 @@
 <div class="min-h-screen bg-base-100 p-8">
 	<h1 class="mb-6 text-2xl font-bold text-base-content">Texting in Time — Timeline</h1>
 
-	<TimelineFilters
-		{directionOptions}
-		{languageOptions}
-		{typeOptions}
-		{platformOptions}
-		{chatOptions}
-		bind:selectedDirections
-		bind:selectedTypes
-		bind:selectedPlatforms
-		bind:selectedLanguages
-		bind:selectedChats
-	/>
+	<div class="flex flex-col gap-6 lg:flex-row">
+		<aside class="lg:w-64 lg:shrink-0">
+			<TimelineFilters
+				{directionOptions}
+				{languageOptions}
+				{typeOptions}
+				{platformOptions}
+				{chatOptions}
+				bind:selectedDirections
+				bind:selectedTypes
+				bind:selectedPlatforms
+				bind:selectedLanguages
+				bind:selectedChats
+			/>
+		</aside>
 
-	<p class="mb-4 text-sm text-base-content/70">
-		Showing {visibleData.length} visible messages ({filteredData.length} after filters, {data.length}
-		total)
-	</p>
+		<div class="min-w-0 flex-1">
+			<p class="mb-4 text-sm text-base-content/70">
+				Showing {visibleData.length} visible messages ({filteredData.length} after filters, {data.length}
+				total)
+			</p>
 
-	{#if hasResults}
-		<div class="overflow-x-auto">
-			<TimelineChart data={filteredData} bind:visibleStart bind:visibleEnd />
+			{#if hasResults}
+				<div class="overflow-x-auto">
+					<TimelineChart data={filteredData} bind:visibleStart bind:visibleEnd />
+				</div>
+
+				{#if visibleData.length === 0}
+					<div role="status" class="mt-4 alert alert-soft alert-info">
+						<span>No filtered messages are visible in the current timeline viewport.</span>
+					</div>
+				{:else}
+					<SelectedMessagesList messages={visibleData} />
+				{/if}
+			{:else}
+				<div role="alert" class="alert alert-soft alert-warning">
+					<span>No messages match your filters. Adjust selections or reset all.</span>
+				</div>
+			{/if}
 		</div>
-
-		{#if visibleData.length === 0}
-			<div role="status" class="mt-4 alert alert-soft alert-info">
-				<span>No filtered messages are visible in the current timeline viewport.</span>
-			</div>
-		{:else}
-			<SelectedMessagesList messages={visibleData} />
-		{/if}
-	{:else}
-		<div role="alert" class="alert alert-soft alert-warning">
-			<span>No messages match your filters. Adjust selections or reset all.</span>
-		</div>
-	{/if}
+	</div>
 </div>
