@@ -70,7 +70,7 @@
 				[0, 0],
 				[innerWidth, height]
 			])
-			.on('end', (event: d3.D3BrushEvent<unknown>) => {
+			.on('brush', (event: d3.D3BrushEvent<unknown>) => {
 				if (!event.sourceEvent) return;
 				const sel = event.selection as [number, number] | null;
 				if (!sel) return;
