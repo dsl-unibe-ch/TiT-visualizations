@@ -73,7 +73,7 @@
 	<h1 class="mb-6 text-2xl font-bold text-base-content">Texting in Time — Timeline</h1>
 
 	<div class="flex flex-col gap-6 lg:flex-row">
-		<aside class="lg:w-64 lg:shrink-0">
+		<aside class="lg:sticky lg:top-4 lg:h-fit lg:w-64 lg:shrink-0">
 			<TimelineFilters
 				{directionOptions}
 				{languageOptions}
