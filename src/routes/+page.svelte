@@ -20,11 +20,15 @@
 	const languageOptions = [
 		...new Set(data.filter((message) => message.language).map((message) => message.language!))
 	].sort((a, b) => (a ?? '').localeCompare(b ?? ''));
+	const chatOptions = [...new Set(data.map((message) => message.chatname))].sort((a, b) =>
+		a.localeCompare(b)
+	);
 
 	let selectedDirections = $state<Message['direction'][]>([...directionOptions]);
 	let selectedTypes = $state<string[]>([...typeOptions]);
 	let selectedPlatforms = $state<string[]>([...platformOptions]);
 	let selectedLanguages = $state<string[]>([...languageOptions]);
+	let selectedChats = $state<string[]>([...chatOptions]);
 	let visibleStart = $state<Date | null>(null);
 	let visibleEnd = $state<Date | null>(null);
 
@@ -41,7 +45,8 @@
 				selectedDirections.includes(message.direction) &&
 				selectedTypes.includes(message.type) &&
 				selectedPlatforms.includes(message.platform) &&
-				selectedLanguages.includes(message.language ?? '')
+				selectedLanguages.includes(message.language ?? '') &&
+				selectedChats.includes(message.chatname)
 		);
 	});
 
@@ -72,10 +77,12 @@
 		{languageOptions}
 		{typeOptions}
 		{platformOptions}
+		{chatOptions}
 		bind:selectedDirections
 		bind:selectedTypes
 		bind:selectedPlatforms
 		bind:selectedLanguages
+		bind:selectedChats
 	/>
 
 	<p class="mb-4 text-sm text-base-content/70">

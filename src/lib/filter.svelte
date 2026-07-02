@@ -6,19 +6,23 @@
 		typeOptions,
 		platformOptions,
 		languageOptions,
+		chatOptions,
 		selectedDirections = $bindable(),
 		selectedTypes = $bindable(),
 		selectedPlatforms = $bindable(),
-		selectedLanguages = $bindable()
+		selectedLanguages = $bindable(),
+		selectedChats = $bindable()
 	}: {
 		directionOptions: Message['direction'][];
 		typeOptions: string[];
 		platformOptions: string[];
 		languageOptions: string[];
+		chatOptions: string[];
 		selectedDirections: Message['direction'][];
 		selectedTypes: string[];
 		selectedPlatforms: string[];
 		selectedLanguages: string[];
+		selectedChats: string[];
 	} = $props();
 
 	function toggleValue<T extends string>(option: T, current: T[], checked: boolean): T[] {
@@ -44,11 +48,16 @@
 		selectedLanguages = toggleValue(option, selectedLanguages, checked);
 	}
 
+	function toggleChat(option: string, checked: boolean) {
+		selectedChats = toggleValue(option, selectedChats, checked);
+	}
+
 	function resetAll() {
 		selectedDirections = [...directionOptions];
 		selectedTypes = [...typeOptions];
 		selectedPlatforms = [...platformOptions];
 		selectedLanguages = [...languageOptions];
+		selectedChats = [...chatOptions];
 	}
 
 	function toTitle(value: string): string {
@@ -62,7 +71,8 @@
 		{ label: 'Direction', selected: selectedDirections.length, total: directionOptions.length },
 		{ label: 'Type', selected: selectedTypes.length, total: typeOptions.length },
 		{ label: 'Platform', selected: selectedPlatforms.length, total: platformOptions.length },
-		{ label: 'Language', selected: selectedLanguages.length, total: languageOptions.length }
+		{ label: 'Language', selected: selectedLanguages.length, total: languageOptions.length },
+		{ label: 'Chat', selected: selectedChats.length, total: chatOptions.length }
 	]);
 </script>
 
@@ -73,7 +83,7 @@
 			<button type="button" class="btn btn-ghost btn-sm" onclick={resetAll}>Reset all</button>
 		</div>
 
-		<div class="grid gap-4 md:grid-cols-4">
+		<div class="grid gap-4 md:grid-cols-5">
 			<fieldset class="fieldset rounded-box border border-base-300 bg-base-100 p-3">
 				<legend class="fieldset-legend text-sm">Direction</legend>
 				{#each directionOptions as option (option)}
@@ -134,6 +144,22 @@
 								toggleLanguage(option, (event.currentTarget as HTMLInputElement).checked)}
 						/>
 						<span>{toTitle(option)}</span>
+					</label>
+				{/each}
+			</fieldset>
+
+			<fieldset class="fieldset rounded-box border border-base-300 bg-base-100 p-3">
+				<legend class="fieldset-legend text-sm">Chat</legend>
+				{#each chatOptions as option (option)}
+					<label class="label cursor-pointer justify-start gap-2 py-1">
+						<input
+							type="checkbox"
+							class="checkbox checkbox-sm checkbox-primary"
+							checked={selectedChats.includes(option)}
+							onchange={(event) =>
+								toggleChat(option, (event.currentTarget as HTMLInputElement).checked)}
+						/>
+						<span>{option}</span>
 					</label>
 				{/each}
 			</fieldset>
