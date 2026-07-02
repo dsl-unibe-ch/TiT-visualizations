@@ -397,104 +397,93 @@
 			{/each}
 		</g>
 
-		<!-- Clipped timeline area -->
-		<defs>
-			<clipPath id="chart-clip">
-				<rect x={0} y={-margin.top} width={innerWidth} height={totalHeight} />
-			</clipPath>
-		</defs>
-
-		<g transform="translate({margin.left}, {margin.top})" clip-path="url(#chart-clip)">
-			<!-- Time axis ticks -->
-			{#each ticks as tick (tick.getTime())}
-				{@const tx = xScale(tick)}
-				<g transform="translate({tx}, 0)">
-					<line
-						y1={-5}
-						y2={chatNames.length * rowHeight}
-						stroke="var(--color-base-300)"
-						stroke-width="0.5"
-					/>
-					<text
-						y={-10}
-						text-anchor="end"
-						transform="rotate(-45, 0, -10)"
-						font-size="11"
-						fill="var(--color-base-content)"
-					>
-						{timeFormat(tick)}
-					</text>
-				</g>
-			{/each}
-
-			<!-- Day separators and labels -->
-			{#each dayBoundaries as day (day.getTime())}
-				{@const dx = xScale(day)}
-				<!-- Vertical separator line -->
-				<line
-					x1={dx}
-					y1={-25}
-					x2={dx}
-					y2={chatNames.length * rowHeight}
-					stroke="var(--color-base-300)"
-					stroke-width="1.5"
-					stroke-dasharray="none"
-				/>
-				<!-- Weekday label -->
-				<text
-					x={dx}
-					y={-15}
-					text-anchor="middle"
-					dominant-baseline="middle"
-					font-size="12"
-					font-weight="600"
-					fill="var(--color-base-content)"
-				>
-					{weekdayFormat(day)}
-				</text>
-			{/each}
-
-			<!-- Attention line -->
-			{#each attentionPath as point, i (`${point.x}-${point.y}`)}
-				{#if i > 0}
-					<line
-						x1={attentionPath[i - 1].x}
-						y1={attentionPath[i - 1].y}
-						x2={point.x}
-						y2={point.y}
-						stroke="var(--color-neutral)"
-						stroke-width="1"
-						stroke-dasharray="4 3"
-						fill="none"
-					/>
-				{/if}
-			{/each}
-
-			<!-- Chat rows -->
-			{#each chatGroups as [chatname, messages], i (chatname)}
-				{@const y = i * rowHeight + rowHeight / 2}
-
-				<!-- Message blocks -->
-				{#each messages as msg (msg.recording_id + msg.message_id)}
-					{@const msgTime = new Date(msg.t)}
-					<!-- svelte-ignore a11y_no_static_element_interactions -->
-					<g
-						transform="translate({xScale(msgTime)}, {y})"
-						class="cursor-pointer"
-						onpointerenter={() => {
-							hoveredMsg = msg;
-							tooltipX = xScale(msgTime);
-							tooltipY = y - 22;
-						}}
-						onpointerleave={() => {
-							hoveredMsg = null;
-						}}
-					>
-						{@render directionShape(msg.direction, 130, platformColor(msg.platform))}
+		<!-- Clipped timeline area. -->
+		<svg x={margin.left} y={0} width={innerWidth} height={totalHeight} overflow="hidden">
+			<g transform="translate(0, {margin.top})">
+				<!-- Time axis ticks -->
+				{#each ticks as tick (tick.getTime())}
+					{@const tx = xScale(tick)}
+					<g transform="translate({tx}, 0)">
+						<line
+							y1={-5}
+							y2={chatNames.length * rowHeight}
+							stroke="var(--color-base-300)"
+							stroke-width="0.5"
+						/>
+						<text
+							y={-10}
+							text-anchor="end"
+							transform="rotate(-45, 0, -10)"
+							font-size="11"
+							fill="var(--color-base-content)"
+						>
+							{timeFormat(tick)}
+						</text>
 					</g>
 				{/each}
-			{/each}
-		</g>
+
+				<!-- Day separators and labels -->
+				{#each dayBoundaries as day (day.getTime())}
+					{@const dx = xScale(day)}
+					<!-- Vertical separator line -->
+					<line
+						x1={dx}
+						y1={-25}
+						x2={dx}
+						y2={chatNames.length * rowHeight}
+						stroke="var(--color-base-300)"
+						stroke-width="1.5"
+						stroke-dasharray="none"
+					/>
+					<!-- Weekday label -->
+					<text
+						x={dx}
+						y={-15}
+						text-anchor="middle"
+						dominant-baseline="middle"
+						font-size="12"
+						font-weight="600"
+						fill="var(--color-base-content)"
+					>
+						{weekdayFormat(day)}
+					</text>
+				{/each}
+
+				<!-- Attention line -->
+				<polyline
+					points={attentionPath.map((p) => `${p.x},${p.y}`).join(' ')}
+					fill="none"
+					stroke="var(--color-neutral)"
+					stroke-width="1"
+					stroke-dasharray="4 3"
+				/>
+
+				<!-- Chat rows -->
+				{#each chatGroups as [chatname, messages], i (chatname)}
+					{@const y = i * rowHeight + rowHeight / 2}
+
+					<!-- Message blocks -->
+					{#each messages as msg (msg.recording_id + msg.message_id)}
+						{@const msgTime = new Date(msg.t)}
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
+						<g
+							transform="translate({xScale(msgTime)}, {y})"
+							class="cursor-pointer"
+							onpointerenter={() => {
+								hoveredMsg = msg;
+								tooltipX = xScale(msgTime);
+								tooltipY = y - 22;
+							}}
+							onpointerleave={() => {
+								hoveredMsg = null;
+							}}
+						>
+							{@render directionShape(msg.direction, 130, platformColor(msg.platform))}
+						</g>
+					{/each}
+				{/each}
+			</g>
+		</svg>
 
 		<!-- Overview minimap -->
 		<g transform="translate({margin.left}, {mainChartHeight + overviewMarginTop})">

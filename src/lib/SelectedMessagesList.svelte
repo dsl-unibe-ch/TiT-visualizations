@@ -66,7 +66,7 @@
 		URL.revokeObjectURL(url);
 	}
 
-	const pageSize = 100;
+	const pageSize = 10;
 	let visibleCount = $state(pageSize);
 
 	const messageSetKey = $derived(
