@@ -13,6 +13,8 @@ Interactive data visualizations for the **Texting in Time (TiT)** research proje
 | Lint       | `pnpm lint`    |
 | Format     | `pnpm format`  |
 
+> **Validating changes:** use `pnpm check` as the primary gate. `pnpm lint` currently fails on pre-existing non-code files (e.g. some `*.md` / prompt files) unrelated to your change — don't try to "fix" those; instead run Prettier on just the files you edited (`pnpm exec prettier --check <files>`).
+
 ## Tech Stack & Conventions
 
 - **Svelte 5** with runes mode enforced (`$state`, `$derived`, `$effect`, `$props` — no legacy `let`/`export let`)
@@ -28,40 +30,66 @@ Interactive data visualizations for the **Texting in Time (TiT)** research proje
 
 ```
 src/
-  lib/              # Shared code ($lib alias)
-    assets/data/    # Reference images and future CSV data files
-  routes/           # SvelteKit pages
-    +page.svelte    # Main visualization page
-    +layout.svelte  # Root layout (imports Tailwind, favicon)
-    layout.css      # Tailwind entry point
+  lib/                        # Shared code ($lib alias)
+    TimelineChart.svelte      # Main chart: chatGroups, zoom/pan, glyphs, attention line
+    TimelineMinimap.svelte    # Overview + brush (shows ALL chats)
+    SelectedMessagesList.svelte # Viewport messages table + CSV export
+    filter.svelte             # Multi-select filter UI
+    types.ts                  # Message type
+    data/
+      index.ts                # allMessages (globs sessions/*.json)
+      manifest.ts             # Session metadata
+      sessions/*.json         # Per-session message data
+  routes/
+    +page.svelte              # Page: filter state, predicate, wires components
+    +layout.svelte            # Root layout (imports Tailwind, favicon)
+    layout.css                # Tailwind entry point
+scripts/ingest.ts             # Data ingestion script
 ```
 
 ## Data Model
 
-Messages are provided as arrays (CSV import planned). Each record has:
+Messages are loaded from per-session JSON files under [`src/lib/data/sessions/`](src/lib/data/sessions/) and combined via [`src/lib/data/index.ts`](src/lib/data/index.ts) (`allMessages`). Each record (`Message` in [`src/lib/types.ts`](src/lib/types.ts)) has:
 
-| Field         | Type                       | Description                                 |
-| ------------- | -------------------------- | ------------------------------------------- |
-| `t`           | ISO 8601 string            | Message timestamp                           |
-| `t_video`     | number                     | Seconds offset in source video              |
-| `direction`   | `'incoming' \| 'outgoing'` | Message direction                           |
-| `author`      | string                     | Sender name                                 |
-| `chatname`    | string                     | Chat/conversation name                      |
-| `content`     | string                     | Message text                                |
-| `type`        | string                     | Message type (e.g. `'text'`)                |
-| `platform`    | string                     | Platform (e.g. `'WhatsApp'`, `'Instagram'`) |
-| `n_revisions` | number                     | Edit count                                  |
+| Field          | Type                                     | Description                                           |
+| -------------- | ---------------------------------------- | ----------------------------------------------------- |
+| `t`            | naive local wall-clock string            | Message timestamp (no timezone — read HH:MM directly) |
+| `t_video`      | number                                   | Seconds offset in source video                        |
+| `direction`    | `'incoming' \| 'outgoing' \| 'not sent'` | Message direction                                     |
+| `author`       | string                                   | Sender name                                           |
+| `chatname`     | string                                   | Chat/conversation name (drives timeline rows)         |
+| `content`      | string                                   | Message text                                          |
+| `type`         | string                                   | Message type (e.g. `'text'`)                          |
+| `platform`     | string                                   | Platform (e.g. `'WhatsApp'`, `'Instagram'`)           |
+| `n_revisions`  | number                                   | Edit count                                            |
+| `language`     | string \| undefined                      | Detected message language                             |
+| `recording_id` | string                                   | Source recording id                                   |
+| `message_id`   | string                                   | Unique id within a recording                          |
 
-## Visualization Design
+## How the Timeline Visualization Works
 
-Reference mockups are in [`src/lib/assets/data/`](src/lib/assets/data/). The target visualizations are **timeline charts** with:
+Entry point [`src/routes/+page.svelte`](src/routes/+page.svelte) → [`TimelineChart.svelte`](src/lib/TimelineChart.svelte) → [`TimelineMinimap.svelte`](src/lib/TimelineMinimap.svelte) + [`SelectedMessagesList.svelte`](src/lib/SelectedMessagesList.svelte).
 
-- **Horizontal axis**: 24-hour time scale (00:00–23:30)
-- **Rows**: One per contact/chat, labeled with name + platform icon
-- **Message blocks**: Green (incoming) / Red (outgoing), positioned on the timeline
-- **Gray bars**: Periods of active conversation
-- **Dashed lines**: Cross-chat connections showing interaction flow
-- **Group chats**: Multiple authors grouped with brackets
+- **Chats = rows.** Messages are grouped by `chatname` (`d3.group`) into `chatGroups`, sorted by each chat's first message time. Each group is one row (`rowHeight = 50`). This grouping is the core "how chats work" concept — reuse `chatGroups` rather than re-deriving it.
+- **X axis** is a `d3.scaleTime` domain spanning 1h before the first message to 1h after the last, mapped across all sessions (not a fixed 24h day).
+- **Zoom/pan**: `zoomLevel` + `panOffset` widen a virtual `zoomedWidth = innerWidth * zoomLevel` that gets clipped to the viewport. Mouse wheel zooms, middle-click / shift+drag pans. The minimap brush mirrors the same state (bindable `zoomLevel`/`panOffset`).
+- **Visible chats only**: `visibleChatGroups` filters `chatGroups` to chats with ≥1 message inside the current `xScale.domain()` window. Rows, labels, `chatNames`, `mainChartHeight`, and the attention line all derive from `visibleChatGroups`, so inactive chats collapse as you zoom/pan. The **minimap keeps the full `chatGroups`** so the overview always shows every chat.
+- **Message glyphs**: circle = incoming, triangle = outgoing, dashed square = not sent. Colored by `platform` via an ordinal `schemeCategory10` scale. The dashed **attention line** (`chronologicalMessages`) connects messages across chats in time order.
+- `visibleStart`/`visibleEnd` are bound out of `TimelineChart` to `+page.svelte`, which feeds `SelectedMessagesList` (only messages inside the viewport, with CSV export).
+
+## Filters
+
+Filter UI lives in [`src/lib/filter.svelte`](src/lib/filter.svelte); state and predicate live in [`src/routes/+page.svelte`](src/routes/+page.svelte). All filters are multi-select checkbox groups, default all-selected, with a "Reset all" button and summary badges.
+
+| Filter    | Field       | Options source                                        |
+| --------- | ----------- | ----------------------------------------------------- |
+| Direction | `direction` | fixed order incoming/outgoing/not sent (present only) |
+| Type      | `type`      | unique sorted `type` values                           |
+| Platform  | `platform`  | unique sorted `platform` values                       |
+| Language  | `language`  | unique sorted `language` values                       |
+| Chat      | `chatname`  | unique sorted `chatname` values                       |
+
+To add a filter, mirror the existing pattern in both files: derive `xOptions`, add `selectedX = $state([...xOptions])`, add `selectedX.includes(message.x)` to the `filteredDataWithTime` predicate, add bindable props + a `<fieldset>` block + `toggleX` + include it in `resetAll`/`selectionSummary`, and pass it from `+page.svelte`. Filtering by chat drops that chat's row entirely (the `chatGroups` grouping only sees filtered data).
 
 ## D3 + Svelte Integration Pattern
 
