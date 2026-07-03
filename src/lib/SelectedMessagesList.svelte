@@ -1,5 +1,10 @@
 <script lang="ts">
 	import type { Message } from '$lib/types';
+	import { marked } from 'marked';
+
+	marked.use({
+		breaks: true
+	});
 
 	let { messages }: { messages: Message[] } = $props();
 
@@ -159,7 +164,7 @@
 						<div class="w-14 text-xs tabular-nums opacity-70">{formatTime(msg.t)}</div>
 
 						<div class="list-col-grow">
-							<p class="text-sm leading-relaxed">{msg.content}</p>
+							<p class="text-sm leading-relaxed">{@html marked.parseInline(msg.content)}</p>
 							<div class="mt-2 flex flex-wrap gap-2 text-xs">
 								<span class="badge badge-ghost badge-sm">Author: {msg.author}</span>
 								<span class="badge badge-ghost badge-sm">Chat: {msg.chatname}</span>
