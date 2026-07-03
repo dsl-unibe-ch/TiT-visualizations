@@ -11,10 +11,8 @@
 import { readdirSync, mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import pkg from 'xlsx';
+import { readSheet } from 'read-excel-file/node';
 import type { Message } from '../src/lib/types';
-
-const XLSX = pkg;
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -24,7 +22,8 @@ const MANIFEST_PATH = join(ROOT, 'src/lib/data/manifest.ts');
 
 const SELF_FALLBACK = 'Felicitas Albrecht';
 
-type RawRow = Record<string, string | number | null>;
+type CellValue = string | number | boolean | Date | null;
+type RawRow = Record<string, CellValue>;
 type Ymd = { y: number; m: number; d: number };
 type Anchor = { videoSeconds: number | null; clockSeconds: number | null; date: Ymd | null };
 
@@ -41,13 +40,17 @@ const pad = (n: number) => String(n).padStart(2, '0');
 
 /** Parse an Excel clock value into seconds-of-day. Accepts a serial fraction
  * (0..1) or a `HH:MM:SS(.mmm)` string. Returns null when empty/unparseable. */
-function clockToSeconds(value: string | number | null): number | null {
+function clockToSeconds(value: CellValue): number | null {
 	if (value === null || value === '') return null;
+	if (value instanceof Date) {
+		return value.getHours() * 3600 + value.getMinutes() * 60 + value.getSeconds();
+	}
 	if (typeof value === 'number') {
 		if (!Number.isFinite(value)) return null;
 		const fraction = value % 1;
 		return Math.round(fraction * 86400);
 	}
+	if (typeof value !== 'string') return null;
 	const match = value.trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}(?:\.\d+)?))?$/);
 	if (!match) return null;
 	const seconds = match[3] ? Math.round(parseFloat(match[3])) : 0;
@@ -55,25 +58,62 @@ function clockToSeconds(value: string | number | null): number | null {
 }
 
 /** Parse a video timecode `HH:MM:SS.mmm` into (fractional) seconds. */
-function videoToSeconds(value: string | number | null): number | null {
+function videoToSeconds(value: CellValue): number | null {
 	if (value === null || value === '') return null;
+	if (value instanceof Date) {
+		return value.getHours() * 3600 + value.getMinutes() * 60 + value.getSeconds();
+	}
 	if (typeof value === 'number') return value * 86400;
+	if (typeof value !== 'string') return null;
 	const match = value.trim().match(/^(\d{1,2}):(\d{2}):(\d{2}(?:\.\d+)?)$/);
 	if (!match) return null;
 	return Number(match[1]) * 3600 + Number(match[2]) * 60 + parseFloat(match[3]);
 }
 
 /** Parse an Excel date value (serial number or `DD.MM.YYYY`) into Y/M/D. */
-function dateToYmd(value: string | number | null): Ymd | null {
+function dateToYmd(value: CellValue): Ymd | null {
 	if (value === null || value === '') return null;
-	if (typeof value === 'number') {
-		const parsed = XLSX.SSF.parse_date_code(value);
-		if (!parsed) return null;
-		return { y: parsed.y, m: parsed.m, d: parsed.d };
+	if (value instanceof Date) {
+		return { y: value.getFullYear(), m: value.getMonth() + 1, d: value.getDate() };
 	}
+	if (typeof value === 'number') {
+		if (!Number.isFinite(value)) return null;
+		const excelEpochOffset = 25569;
+		const msPerDay = 86400 * 1000;
+		const asDate = new Date(Math.round((value - excelEpochOffset) * msPerDay));
+		if (Number.isNaN(asDate.getTime())) return null;
+		return { y: asDate.getUTCFullYear(), m: asDate.getUTCMonth() + 1, d: asDate.getUTCDate() };
+	}
+	if (typeof value !== 'string') return null;
 	const match = value.trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
 	if (!match) return null;
 	return { y: Number(match[3]), m: Number(match[2]), d: Number(match[1]) };
+}
+
+function asHeader(cell: CellValue): string {
+	return typeof cell === 'string' ? cell.trim() : String(cell ?? '').trim();
+}
+
+function toRows(sheetData: CellValue[][]): RawRow[] {
+	if (sheetData.length === 0) return [];
+	const headers = sheetData[0].map(asHeader);
+	const rows: RawRow[] = [];
+	for (let i = 1; i < sheetData.length; i++) {
+		const cells = sheetData[i] ?? [];
+		const row: RawRow = {};
+		for (let c = 0; c < headers.length; c++) {
+			const key = headers[c];
+			if (!key) continue;
+			row[key] = cells[c] ?? null;
+		}
+		rows.push(row);
+	}
+	return rows;
+}
+
+async function readSheetRows(filePath: string, sheet: string): Promise<RawRow[]> {
+	const sheetData = await readSheet(filePath, sheet);
+	return toRows(sheetData as CellValue[][]);
 }
 
 /** Build a naive local ISO timestamp (no timezone) from a date and seconds-of-day. */
@@ -119,14 +159,19 @@ function detectSelf(rows: RawRow[]): string {
 	return self;
 }
 
-function transformFile(fileName: string): { messages: Message[]; meta: SessionMeta } {
-	const workbook = XLSX.readFile(join(RAW_DIR, fileName));
-	const messageSheet = workbook.Sheets['Messages'];
-	const timeSheet = workbook.Sheets['Time'];
-	if (!messageSheet) throw new Error(`${fileName}: missing "Messages" sheet`);
+async function transformFile(
+	fileName: string
+): Promise<{ messages: Message[]; meta: SessionMeta }> {
+	const filePath = join(RAW_DIR, fileName);
+	const messageRows = await readSheetRows(filePath, 'Messages');
+	if (messageRows.length === 0) throw new Error(`${fileName}: missing or empty "Messages" sheet`);
 
-	const messageRows = XLSX.utils.sheet_to_json<RawRow>(messageSheet, { defval: null });
-	const timeRows = timeSheet ? XLSX.utils.sheet_to_json<RawRow>(timeSheet, { defval: null }) : [];
+	let timeRows: RawRow[] = [];
+	try {
+		timeRows = await readSheetRows(filePath, 'Time');
+	} catch {
+		timeRows = [];
+	}
 	const anchors = buildAnchorMap(timeRows);
 	const self = detectSelf(messageRows);
 
@@ -211,7 +256,7 @@ function transformFile(fileName: string): { messages: Message[]; meta: SessionMe
 	return { messages, meta };
 }
 
-function main() {
+async function main() {
 	const files = readdirSync(RAW_DIR)
 		.filter((f) => /_database\.xlsx$/i.test(f) && !f.startsWith('~$'))
 		.sort();
@@ -225,7 +270,7 @@ function main() {
 
 	const metas: SessionMeta[] = [];
 	for (const file of files) {
-		const { messages, meta } = transformFile(file);
+		const { messages, meta } = await transformFile(file);
 		writeFileSync(join(OUT_DIR, meta.file), JSON.stringify(messages, null, '\t') + '\n');
 		metas.push(meta);
 		console.log(`✓ ${file} -> sessions/${meta.file} (${messages.length} messages)`);
@@ -236,4 +281,4 @@ function main() {
 	console.log(`✓ manifest.ts (${metas.length} sessions)`);
 }
 
-main();
+void main();
