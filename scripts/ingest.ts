@@ -43,7 +43,9 @@ const pad = (n: number) => String(n).padStart(2, '0');
 function clockToSeconds(value: CellValue): number | null {
 	if (value === null || value === '') return null;
 	if (value instanceof Date) {
-		return value.getHours() * 3600 + value.getMinutes() * 60 + value.getSeconds();
+		// read-excel-file stores time-only cells as a UTC epoch date, so read UTC
+		// parts to avoid a timezone-dependent hour shift.
+		return value.getUTCHours() * 3600 + value.getUTCMinutes() * 60 + value.getUTCSeconds();
 	}
 	if (typeof value === 'number') {
 		if (!Number.isFinite(value)) return null;
@@ -61,7 +63,7 @@ function clockToSeconds(value: CellValue): number | null {
 function videoToSeconds(value: CellValue): number | null {
 	if (value === null || value === '') return null;
 	if (value instanceof Date) {
-		return value.getHours() * 3600 + value.getMinutes() * 60 + value.getSeconds();
+		return value.getUTCHours() * 3600 + value.getUTCMinutes() * 60 + value.getUTCSeconds();
 	}
 	if (typeof value === 'number') return value * 86400;
 	if (typeof value !== 'string') return null;
@@ -74,7 +76,7 @@ function videoToSeconds(value: CellValue): number | null {
 function dateToYmd(value: CellValue): Ymd | null {
 	if (value === null || value === '') return null;
 	if (value instanceof Date) {
-		return { y: value.getFullYear(), m: value.getMonth() + 1, d: value.getDate() };
+		return { y: value.getUTCFullYear(), m: value.getUTCMonth() + 1, d: value.getUTCDate() };
 	}
 	if (typeof value === 'number') {
 		if (!Number.isFinite(value)) return null;
@@ -223,7 +225,11 @@ async function transformFile(
 
 		const author = String(row.author ?? '').trim();
 		const recipient = String(row.recipient ?? '').trim();
-		const chatname = author === self ? recipient : author;
+		// The chat is the other side of the conversation: the recipient unless it's
+		// self (a direct message to the participant), in which case it's the author.
+		// This keeps group chats (recipient = "Gruppe: …") grouped by the group name
+		// even for incoming messages authored by an individual member.
+		const chatname = !recipient || recipient === self ? author : recipient;
 
 		messages.push({
 			t: buildIso(date, clockSeconds),
