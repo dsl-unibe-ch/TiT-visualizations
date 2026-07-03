@@ -4,6 +4,7 @@
 	import TimelineChart from '$lib/TimelineChart.svelte';
 	import type { Message } from '$lib/types';
 	import { allMessages } from '$lib/data';
+	import { messageId, searchContent, regexSearch } from '$lib/search';
 
 	const data: Message[] = allMessages;
 
@@ -31,6 +32,8 @@
 	let selectedChats = $state<string[]>([...chatOptions]);
 	let visibleStart = $state<Date | null>(null);
 	let visibleEnd = $state<Date | null>(null);
+	let searchQuery = $state('');
+	let searchMode = $state<'text' | 'regex'>('text');
 
 	const dataWithTime = $derived.by(() => {
 		return data.map((message) => ({
@@ -39,14 +42,26 @@
 		}));
 	});
 
+	const searchResult = $derived.by(() => {
+		const q = searchQuery.trim();
+		if (!q) return { ids: null, error: null };
+		if (searchMode === 'regex') return regexSearch(q, 'i');
+		return { ids: searchContent(q), error: null };
+	});
+
+	/** How many messages in the full dataset match the current search query. */
+	const searchMatchCount = $derived(searchResult.ids?.size ?? 0);
+
 	const filteredDataWithTime = $derived.by(() => {
+		const matchIds = searchResult.ids;
 		return dataWithTime.filter(
 			({ message }) =>
 				selectedDirections.includes(message.direction) &&
 				selectedTypes.includes(message.type) &&
 				selectedPlatforms.includes(message.platform) &&
 				selectedLanguages.includes(message.language ?? '') &&
-				selectedChats.includes(message.chatname)
+				selectedChats.includes(message.chatname) &&
+				(matchIds === null || matchIds.has(messageId(message)))
 		);
 	});
 
@@ -85,6 +100,10 @@
 				bind:selectedPlatforms
 				bind:selectedLanguages
 				bind:selectedChats
+				bind:searchQuery
+				bind:searchMode
+				searchError={searchResult.error}
+				{searchMatchCount}
 			/>
 		</aside>
 

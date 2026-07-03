@@ -11,7 +11,11 @@
 		selectedTypes = $bindable(),
 		selectedPlatforms = $bindable(),
 		selectedLanguages = $bindable(),
-		selectedChats = $bindable()
+		selectedChats = $bindable(),
+		searchQuery = $bindable(),
+		searchMode = $bindable(),
+		searchError,
+		searchMatchCount
 	}: {
 		directionOptions: Message['direction'][];
 		typeOptions: string[];
@@ -23,6 +27,10 @@
 		selectedPlatforms: string[];
 		selectedLanguages: string[];
 		selectedChats: string[];
+		searchQuery: string;
+		searchMode: 'text' | 'regex';
+		searchError: string | null;
+		searchMatchCount: number;
 	} = $props();
 
 	function toggleValue<T extends string>(option: T, current: T[], checked: boolean): T[] {
@@ -38,6 +46,7 @@
 		selectedPlatforms = [...platformOptions];
 		selectedLanguages = [...languageOptions];
 		selectedChats = [...chatOptions];
+		searchQuery = '';
 	}
 
 	function toTitle(value: string): string {
@@ -111,6 +120,43 @@
 	<div class="flex w-full items-center justify-between gap-2 lg:mb-1">
 		<h2 class="text-sm font-semibold text-base-content/70">Filters</h2>
 		<button type="button" class="btn btn-ghost btn-xs" onclick={resetAll}>Reset all</button>
+	</div>
+
+	<!-- Search -->
+	<div class="w-full">
+		<div class="join w-full">
+			<input
+				type="text"
+				class="input input-sm join-item w-full"
+				class:input-error={searchMode === 'regex' && !!searchError}
+				placeholder={searchMode === 'text' ? 'Search content…' : 'RegEx (content)…'}
+				bind:value={searchQuery}
+			/>
+			{#if searchQuery}
+				<button
+					type="button"
+					class="btn btn-sm join-item btn-ghost"
+					aria-label="Clear search"
+					onclick={() => (searchQuery = '')}>✕</button
+				>
+			{/if}
+			<button
+				type="button"
+				class="btn btn-sm join-item font-mono"
+				class:btn-primary={searchMode === 'regex'}
+				class:btn-ghost={searchMode === 'text'}
+				aria-label="Toggle RegEx mode"
+				title={searchMode === 'text' ? 'Switch to RegEx mode' : 'Switch to text search'}
+				onclick={() => (searchMode = searchMode === 'text' ? 'regex' : 'text')}>.*</button
+			>
+		</div>
+		{#if searchMode === 'regex' && searchError}
+			<p class="mt-1 text-xs text-error" role="alert">{searchError}</p>
+		{:else if searchQuery.trim() && searchError === null}
+			<p class="mt-1 text-xs text-base-content/50">
+				{searchMatchCount} match{searchMatchCount === 1 ? '' : 'es'} in dataset
+			</p>
+		{/if}
 	</div>
 
 	{#each filters as filter (filter.label)}
