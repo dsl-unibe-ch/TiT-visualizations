@@ -34,7 +34,8 @@ src/
     TimelineChart.svelte      # Main chart: chatGroups, zoom/pan, glyphs, attention line
     TimelineMinimap.svelte    # Overview + brush (shows ALL chats)
     SelectedMessagesList.svelte # Viewport messages table + CSV export
-    filter.svelte             # Multi-select filter UI
+    filter.svelte             # Multi-select filter UI + search box (text/RegEx)
+    search.ts                 # MiniSearch index + regex search over content
     types.ts                  # Message type
     data/
       index.ts                # allMessages (globs sessions/*.json)
@@ -90,6 +91,16 @@ Filter UI lives in [`src/lib/filter.svelte`](src/lib/filter.svelte); state and p
 | Chat      | `chatname`  | unique sorted `chatname` values                       |
 
 To add a filter, mirror the existing pattern in both files: derive `xOptions`, add `selectedX = $state([...xOptions])`, add `selectedX.includes(message.x)` to the `filteredDataWithTime` predicate, add bindable props + a `<fieldset>` block + `toggleX` + include it in `resetAll`/`selectionSummary`, and pass it from `+page.svelte`. Filtering by chat drops that chat's row entirely (the `chatGroups` grouping only sees filtered data).
+
+## Search
+
+Search logic lives in [`src/lib/search.ts`](src/lib/search.ts); the input (with a text/RegEx toggle) sits at the top of [`src/lib/filter.svelte`](src/lib/filter.svelte); state and wiring live in [`src/routes/+page.svelte`](src/routes/+page.svelte). Search acts as **another filter, AND-combined** with the checkbox filters, so it narrows the timeline chart, minimap, and messages list together.
+
+- **Message identity**: `messageId(m)` returns `` `${recording_id}:${message_id}` `` — the globally unique key used everywhere search needs to reference a message.
+- **Text mode** (`searchContent`): a single `MiniSearch` index over the `content` field only, built once at module load from `allMessages`. Options are prefix + fuzzy (`0.2`) with `combineWith: 'AND'`.
+- **RegEx mode** (`regexSearch`): tests `content` directly with a `new RegExp(pattern, 'i')` (outside MiniSearch). Invalid patterns return `{ ids: null, error }` so the UI shows a hint instead of crashing.
+- **Wiring in `+page.svelte`**: `searchQuery`/`searchMode` state → `searchResult` derived (`{ ids, error }`, empty query ⇒ `ids: null` = no search filter) → the `filteredDataWithTime` predicate adds `matchIds === null || matchIds.has(messageId(message))`.
+- The index is built from the **full `allMessages`**, not filtered data, so `searchMatchCount` reflects dataset-wide matches; the AND with the checkbox filters happens in the predicate.
 
 ## D3 + Svelte Integration Pattern
 
