@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Message } from '$lib/types';
 	import { marked } from 'marked';
+	import MicAudioLines from '@lucide/svelte/icons/mic-audio-lines';
 
 	marked.use({
 		breaks: true
@@ -164,7 +165,13 @@
 						<div class="w-14 text-xs tabular-nums opacity-70">{formatTime(msg.t)}</div>
 
 						<div class="list-col-grow">
-							<p class="text-sm leading-relaxed">{@html marked.parseInline(msg.content)}</p>
+							<p class="text-sm leading-relaxed">
+							{#if !msg.content && (msg.type === "audio" || msg.type === "sprachnachricht")}
+								<MicAudioLines /><span class="italic text-muted">[Audio message]</span>
+							{:else}
+								{@html marked.parseInline(msg.content)}
+							{/if}
+							</p>
 							<div class="mt-2 flex flex-wrap gap-2 text-xs">
 								<span class="badge badge-ghost badge-sm">Author: {msg.author}</span>
 								<span class="badge badge-ghost badge-sm">Chat: {msg.chatname}</span>
