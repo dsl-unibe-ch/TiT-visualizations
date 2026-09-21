@@ -14,8 +14,16 @@
 		// `value` is a naive local wall-clock timestamp ("YYYY-MM-DDTHH:MM:SS",
 		// no timezone). Read HH:MM directly so the displayed time matches the
 		// recorded wall clock regardless of the viewer's timezone.
-		const match = value.match(/T(\d{2}):(\d{2})/);
-		return match ? `${match[1]}:${match[2]}` : value;
+		const match = value.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+		if (!match) return value;
+
+		const [, year, month, day, hours, minutes] = match;
+		const weekday = new Intl.DateTimeFormat('en', {
+			weekday: 'short',
+			timeZone: 'UTC'
+		}).format(new Date(Date.UTC(Number(year), Number(month) - 1, Number(day))));
+
+		return `${weekday} ${hours}:${minutes}`;
 	}
 
 	function toTitle(value: string): string {
