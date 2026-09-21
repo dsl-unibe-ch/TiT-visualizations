@@ -2,7 +2,8 @@
 	import type { Message } from '$lib/types';
 	import { marked } from 'marked';
 	import MicAudioLines from '@lucide/svelte/icons/mic-audio-lines';
-
+	import Video from '@lucide/svelte/icons/video';
+	import MapPin from '@lucide/svelte/icons/map-pin';
 	marked.use({
 		breaks: true
 	});
@@ -168,6 +169,10 @@
 							<p class="text-sm leading-relaxed">
 							{#if !msg.content && (msg.type === "audio" || msg.type === "sprachnachricht")}
 								<MicAudioLines /><span class="italic text-muted">[Audio message]</span>
+								{:else if !msg.content && (msg.type === "video")}
+									<Video /><span class="italic text-muted">[Video message]</span>
+									{:else if !msg.content && (msg.type === "standort")}
+										<MapPin /><span class="italic text-muted">[Location message]</span>
 							{:else}
 								{@html marked.parseInline(msg.content)}
 							{/if}
