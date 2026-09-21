@@ -14,7 +14,7 @@
 	} = $props();
 
 	// Layout constants
-	const legendWidth = 228;
+	const legendWidth = 150;
 	const legendRowHeight = 18;
 	const legendSectionTitleHeight = 16;
 	const legendTopPadding = 28;
