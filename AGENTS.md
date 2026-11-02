@@ -21,7 +21,8 @@ Interactive data visualizations for the **Texting in Time (TiT)** research proje
 - **TypeScript** (strict mode) — all components use `<script lang="ts">`
 - **D3 v7** for data transformations and scales; **SVG rendering done in Svelte templates**, not via D3 DOM manipulation
 - **Tailwind CSS 4** via Vite plugin — use utility classes; `layout.css` imports Tailwind
-- **SvelteKit** with `adapter-auto` — file-based routing under `src/routes/`
+- **SvelteKit 3** with `adapter-static` — file-based routing under `src/routes/`; configuration is in `vite.config.ts`
+- Shared library imports use the `#lib` package import alias declared in `package.json`
 - **pnpm** as package manager (do not use npm/yarn)
 - **Prettier** with tabs, single quotes, no trailing commas, 100 char width. Svelte plugin + Tailwind plugin
 - **ESLint** with TypeScript + Svelte plugins
@@ -30,7 +31,7 @@ Interactive data visualizations for the **Texting in Time (TiT)** research proje
 
 ```
 src/
-  lib/                        # Shared code ($lib alias)
+  lib/                        # Shared code (#lib alias)
     TimelineChart.svelte      # Main chart: chatGroups, zoom/pan, glyphs, attention line
     TimelineMinimap.svelte    # Overview + brush (shows ALL chats)
     SelectedMessagesList.svelte # Viewport messages table + CSV export
@@ -110,7 +111,7 @@ Use D3 for **data and math** only. Render with Svelte:
 <script lang="ts">
   import * as d3 from 'd3';
   let { data } = $props();
-  const xScale = $derived(d3.scaleTime().domain(...).range(...));
+  const xScale = $derived(d3.scaleTime().domain([start, end]).range([0, width]));
 </script>
 
 <svg>
