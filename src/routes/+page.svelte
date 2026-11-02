@@ -1,10 +1,10 @@
 <script lang="ts">
-	import SelectedMessagesList from '$lib/SelectedMessagesList.svelte';
-	import TimelineFilters from '$lib/filter.svelte';
-	import TimelineChart from '$lib/TimelineChart.svelte';
-	import type { Message } from '$lib/types';
-	import { allMessages } from '$lib/data';
-	import { messageId, searchContent, regexSearch } from '$lib/search';
+	import SelectedMessagesList from '#lib/SelectedMessagesList.svelte';
+	import TimelineFilters from '#lib/filter.svelte';
+	import TimelineChart from '#lib/TimelineChart.svelte';
+	import type { Message } from '#lib/types.js';
+	import { allMessages } from '#lib/data/index.js';
+	import { messageId, searchContent, regexSearch } from '#lib/search.js';
 
 	const data: Message[] = allMessages;
 
@@ -85,7 +85,9 @@
 </script>
 
 <div class="min-h-screen bg-base-100 p-8">
-	<h1 class="mb-6 text-3xl font-bold text-base-content">Texting in Time — Data Visualization and Analysis Tool</h1>
+	<h1 class="mb-6 text-3xl font-bold text-base-content">
+		Texting in Time — Data Visualization and Analysis Tool
+	</h1>
 
 	<div class="flex flex-col gap-6 lg:flex-row">
 		<aside class="lg:sticky lg:top-4 lg:h-fit lg:w-64 lg:shrink-0">

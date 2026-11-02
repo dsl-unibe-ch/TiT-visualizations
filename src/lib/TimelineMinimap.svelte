@@ -1,6 +1,6 @@
 <script lang="ts">
 	import * as d3 from 'd3';
-	import type { Message } from '$lib/types'; // used in chatGroups type
+	import type { Message } from '#lib/types.js'; // used in chatGroups type
 
 	let {
 		chatGroups,

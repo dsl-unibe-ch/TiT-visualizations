@@ -1,6 +1,6 @@
 import MiniSearch from 'minisearch';
-import { allMessages } from '$lib/data';
-import type { Message } from '$lib/types';
+import { allMessages } from '#lib/data/index.js';
+import type { Message } from '#lib/types.js';
 
 /** Globally unique, stable string key for a message. */
 export function messageId(m: Message): string {

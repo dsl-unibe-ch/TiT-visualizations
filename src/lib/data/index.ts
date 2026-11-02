@@ -1,4 +1,4 @@
-import type { Message } from '$lib/types';
+import type { Message } from '#lib/types.js';
 import { sessions, type SessionMeta } from './manifest';
 
 const modules = import.meta.glob<{ default: Message[] }>('./sessions/*.json', { eager: true });

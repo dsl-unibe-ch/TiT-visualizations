@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Message } from '$lib/types';
+	import type { Message } from '#lib/types.js';
 
 	let {
 		directionOptions,
@@ -127,7 +127,7 @@
 		<div class="join w-full">
 			<input
 				type="text"
-				class="input input-sm join-item w-full"
+				class="input join-item w-full input-sm"
 				class:input-error={searchMode === 'regex' && !!searchError}
 				placeholder={searchMode === 'text' ? 'Search content…' : 'RegEx (content)…'}
 				bind:value={searchQuery}
@@ -135,14 +135,14 @@
 			{#if searchQuery}
 				<button
 					type="button"
-					class="btn btn-sm join-item btn-ghost"
+					class="btn join-item btn-ghost btn-sm"
 					aria-label="Clear search"
 					onclick={() => (searchQuery = '')}>✕</button
 				>
 			{/if}
 			<button
 				type="button"
-				class="btn btn-sm join-item font-mono"
+				class="btn join-item font-mono btn-sm"
 				class:btn-primary={searchMode === 'regex'}
 				class:btn-ghost={searchMode === 'text'}
 				aria-label="Toggle RegEx mode"
@@ -164,7 +164,7 @@
 			<div
 				tabindex="0"
 				role="button"
-				class="btn w-full justify-between btn-outline btn-sm font-normal"
+				class="btn w-full justify-between btn-outline font-normal btn-sm"
 			>
 				<span>{filter.label}</span>
 				<span

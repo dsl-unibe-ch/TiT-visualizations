@@ -1,7 +1,7 @@
 <script lang="ts">
 	import * as d3 from 'd3';
-	import type { Message } from '$lib/types';
-	import TimelineMinimap from '$lib/TimelineMinimap.svelte';
+	import type { Message } from '#lib/types.js';
+	import TimelineMinimap from '#lib/TimelineMinimap.svelte';
 
 	let {
 		data,
@@ -519,7 +519,7 @@
 			class="pointer-events-none absolute z-10"
 			style="left: {margin.left + tooltipX}px; top: {margin.top + tooltipY}px;"
 		>
-			<div class="tooltip-open tooltip tooltip-top">
+			<div class="tooltip tooltip-top tooltip-open">
 				<div class="tooltip-content max-w-80 bg-neutral p-3 text-xs text-neutral-content shadow-lg">
 					<p class="mb-2 text-sm font-semibold wrap-break-word">"{hoveredMsg.content}"</p>
 					<dl class="grid grid-cols-[auto_1fr] justify-items-start gap-x-3 gap-y-0.5">

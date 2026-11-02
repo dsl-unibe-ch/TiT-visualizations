@@ -728,7 +728,7 @@ and {SIDEBAR} can be a menu like:
 To open/close the drawer, use a label that points to the `drawer-toggle` input:
 
 ```html
-<label for="my-drawer" class="drawer-button btn">Open/close drawer</label>
+<label for="my-drawer" class="btn drawer-button">Open/close drawer</label>
 ```
 
 Example: This sidebar is always visible on large screen, can be toggled on small screen:
@@ -738,7 +738,7 @@ Example: This sidebar is always visible on large screen, can be toggled on small
 	<input id="my-drawer-3" type="checkbox" class="drawer-toggle" />
 	<div class="drawer-content flex flex-col items-center justify-center">
 		<!-- Page content here -->
-		<label for="my-drawer-3" class="drawer-button btn lg:hidden"> Open drawer </label>
+		<label for="my-drawer-3" class="btn drawer-button lg:hidden"> Open drawer </label>
 	</div>
 	<div class="drawer-side">
 		<label for="my-drawer-3" aria-label="close sidebar" class="drawer-overlay"></label>
@@ -785,7 +785,7 @@ Example: This sidebar is always visible. When it's close we only see iocns, when
 			<div class="m-2 is-drawer-close:tooltip is-drawer-close:tooltip-right" data-tip="Open">
 				<label
 					for="my-drawer-4"
-					class="drawer-button btn btn-circle btn-ghost is-drawer-open:rotate-y-180"
+					class="btn btn-circle btn-ghost drawer-button is-drawer-open:rotate-y-180"
 				>
 					↔️
 				</label>
@@ -917,7 +917,7 @@ FAB with close button. When FAB is open, the original button is replaced with a 
 ```html
 <div class="fab">
 	<div tabindex="0" role="button" class="btn btn-circle btn-lg btn-primary">{IconOriginal}</div>
-	<div class="fab-close">Close <span class="btn btn-circle btn-lg btn-error">✕</span></div>
+	<div class="fab-close">Close <span class="btn btn-circle btn-error btn-lg">✕</span></div>
 	<div>{Label1}<button class="btn btn-circle btn-lg">{Icon1}</button></div>
 	<div>{Label2}<button class="btn btn-circle btn-lg">{Icon2}</button></div>
 	<div>{Label3}<button class="btn btn-circle btn-lg">{Icon3}</button></div>
@@ -943,7 +943,7 @@ FAB Flower. It opens the buttons in a flower shape (quarter circle) arrangement 
 ```html
 <div class="fab fab-flower">
 	<div tabindex="0" role="button" class="btn btn-circle btn-lg btn-primary">{IconOriginal}</div>
-	<button class="fab-main-action btn btn-circle btn-lg">{IconMainAction}</button>
+	<button class="btn fab-main-action btn-circle btn-lg">{IconMainAction}</button>
 	<button class="btn btn-circle btn-lg">{Icon1}</button>
 	<button class="btn btn-circle btn-lg">{Icon2}</button>
 	<button class="btn btn-circle btn-lg">{Icon3}</button>
@@ -955,7 +955,7 @@ FAB Flower with tooltips. There's no space for a text label in a quarter circle,
 ```html
 <div class="fab fab-flower">
 	<div tabindex="0" role="button" class="btn btn-circle btn-lg btn-primary">{IconOriginal}</div>
-	<button class="fab-main-action btn btn-circle btn-lg">{IconMainAction}</button>
+	<button class="btn fab-main-action btn-circle btn-lg">{IconMainAction}</button>
 	<div class="tooltip tooltip-left" data-tip="{Label1}">
 		<button class="btn btn-circle btn-lg">{Icon1}</button>
 	</div>
@@ -1051,7 +1051,7 @@ Without HTML form
 
 ```html
 <div class="filter">
-	<input class="filter-reset btn" type="radio" name="{NAME}" aria-label="×" />
+	<input class="btn filter-reset" type="radio" name="{NAME}" aria-label="×" />
 	<input class="btn" type="radio" name="{NAME}" aria-label="Tab 1 title" />
 	<input class="btn" type="radio" name="{NAME}" aria-label="Tab 2 title" />
 </div>
@@ -1970,7 +1970,7 @@ Using buttons:
 Using radio inputs:
 
 ```html
-<div role="tablist" class="tabs-box tabs">
+<div role="tablist" class="tabs tabs-box">
 	<input type="radio" name="my_tabs" class="tab" aria-label="Tab" />
 </div>
 ```

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Message } from '$lib/types';
+	import type { Message } from '#lib/types.js';
 	import { marked } from 'marked';
 	import MicAudioLines from '@lucide/svelte/icons/mic-audio-lines';
 	import Video from '@lucide/svelte/icons/video';
@@ -139,7 +139,7 @@
 				<button
 					onclick={downloadCsv}
 					disabled={messages.length === 0}
-					class="btn btn-sm btn-ghost"
+					class="btn btn-ghost btn-sm"
 					title="Download selected messages as CSV"
 				>
 					<svg
@@ -175,15 +175,15 @@
 
 						<div class="list-col-grow">
 							<p class="text-sm leading-relaxed">
-							{#if !msg.content && (msg.type === "audio" || msg.type === "sprachnachricht")}
-								<MicAudioLines /><span class="italic text-muted">[Audio message]</span>
-								{:else if !msg.content && (msg.type === "video")}
-									<Video /><span class="italic text-muted">[Video message]</span>
-									{:else if !msg.content && (msg.type === "standort")}
-										<MapPin /><span class="italic text-muted">[Location message]</span>
-							{:else}
-								{@html marked.parseInline(msg.content)}
-							{/if}
+								{#if !msg.content && (msg.type === 'audio' || msg.type === 'sprachnachricht')}
+									<MicAudioLines /><span class="text-muted italic">[Audio message]</span>
+								{:else if !msg.content && msg.type === 'video'}
+									<Video /><span class="text-muted italic">[Video message]</span>
+								{:else if !msg.content && msg.type === 'standort'}
+									<MapPin /><span class="text-muted italic">[Location message]</span>
+								{:else}
+									{@html marked.parseInline(msg.content)}
+								{/if}
 							</p>
 							<div class="mt-2 flex flex-wrap gap-2 text-xs">
 								<span class="badge badge-ghost badge-sm">Author: {msg.author}</span>
