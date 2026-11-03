@@ -35,8 +35,13 @@ src/
     TimelineChart.svelte      # Main chart: chatGroups, zoom/pan, glyphs, attention line
     TimelineMinimap.svelte    # Overview + brush (shows ALL chats)
     SelectedMessagesList.svelte # Viewport messages table + CSV export
-    HourHeatmap.svelte        # Time-of-day heatmap (group rows × 24 hours)
-    hourly.ts                 # Hour-of-day aggregation for the heatmap
+    AnalysisPanel.svelte      # Tabbed analysis card below the timeline
+    HourHeatmap.svelte        # Tab: time-of-day heatmap (group rows × 24 hours)
+    ResponseTimes.svelte      # Tab: her reply-time strip plot
+    ChatSwitching.svelte      # Tab: chat → chat transition matrix
+    BurstsView.svelte         # Tab: burst stats, scatter + histogram
+    hourly.ts                 # Hour-of-day aggregation + shared groupByOptions
+    analysis/                 # Pure logic: time.ts, responses.ts, switching.ts, bursts.ts
     filter.svelte             # Multi-select filter UI + search box (text/RegEx)
     search.ts                 # MiniSearch index + regex search over content
     types.ts                  # Message type
@@ -81,15 +86,33 @@ Entry point [`src/routes/+page.svelte`](src/routes/+page.svelte) → [`TimelineC
 - **Message glyphs**: circle = incoming, triangle = outgoing, dashed square = not sent. Colored by `platform` via an ordinal `schemeCategory10` scale. The dashed **attention line** (`chronologicalMessages`) connects messages across chats in time order.
 - `visibleStart`/`visibleEnd` are bound out of `TimelineChart` to `+page.svelte`, which feeds `SelectedMessagesList` (only messages inside the viewport, with CSV export).
 
-## Time-of-Day Heatmap
+## Analysis Panel
 
-[`HourHeatmap.svelte`](src/lib/HourHeatmap.svelte) sits below the timeline and maps **all filtered messages** (`filteredData` — sidebar filters + search apply, timeline viewport does not) onto the 24 hours of the day. Logic lives in [`src/lib/hourly.ts`](src/lib/hourly.ts).
+[`AnalysisPanel.svelte`](src/lib/AnalysisPanel.svelte) sits below the timeline as a tabbed card. Every tab receives **all filtered messages** (`filteredData` — sidebar filters + search apply, timeline viewport does not). Logic lives in plain TS modules (no Svelte) so it can be tested in isolation; components only render. Timestamps have second resolution; `formatMinutes` (in [`analysis/time.ts`](src/lib/analysis/time.ts)) formats gaps.
+
+### Time of day — [`HourHeatmap.svelte`](src/lib/HourHeatmap.svelte) / [`hourly.ts`](src/lib/hourly.ts)
 
 - **Columns** = hour 0–23 read directly from `t` (`hourOf`), aggregated across all days.
 - **Rows** = the "Group by" select (`groupByOptions`): none, direction, platform, type, language, chat, has emoji, day. `buildHourMatrix` returns per-row hour counts + totals.
 - **Has emoji** (`hasEmoji`) = the `type` field matches `/emoji|emoticon/i` (type field only, not content).
 - **Cell value** (`cellValue`): `count`, `row` (share of the row's messages in that hour — use this to compare groups of different size) or `hour` (share of the hour's messages in that row). Color = `d3.scaleSequential` over `[0, max]`; empty cells are faint.
-- To add a grouping, append an entry to `groupByOptions` (and a fixed order in `compareRows` if needed).
+- To add a grouping, append an entry to `groupByOptions` (and a fixed order in `compareRows` if needed). The Response time tab reuses the same list.
+
+### Response time — [`ResponseTimes.svelte`](src/lib/ResponseTimes.svelte) / [`analysis/responses.ts`](src/lib/analysis/responses.ts)
+
+- `computeReplies(messages, maxGapMin)`: per chat, a reply is her first `outgoing` message after a run of `incoming` ones; time is measured from the **first** incoming of that run. Replies slower than `maxGapMin` (UI default 8 min) are counted in `excluded`, not shown.
+- Strip plot: one row per group (`groupByOptions` minus direction, applied to her reply message), dots per reply, median bar.
+
+### Chat switching — [`ChatSwitching.svelte`](src/lib/ChatSwitching.svelte) / [`analysis/switching.ts`](src/lib/analysis/switching.ts)
+
+- `computeTransitions(messages, gapMin)`: for consecutive messages (any chat, chronological) at most `gapMin` apart, counts `matrix[from][to]`; diagonal = staying in a chat. Returns switches, stays, switch rate.
+- Rendered as a chat × chat matrix (count / % of row); color scale uses the off-diagonal max so switches stay visible.
+
+### Bursts — [`BurstsView.svelte`](src/lib/BurstsView.svelte) / [`analysis/bursts.ts`](src/lib/analysis/bursts.ts)
+
+- `computeBursts(messages, gapMin)`: a new burst starts after more than `gapMin` minutes of silence; each burst has duration, messages, distinct chats and chat switches.
+- Stats, duration × message-count scatter (colored by number of chats) and a chats-per-burst histogram.
+- The burst gap (default 10 min) is `$state` in `AnalysisPanel` and shared (bindable) with Chat switching.
 
 ## Filters
 
