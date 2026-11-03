@@ -2,6 +2,7 @@
 	import SelectedMessagesList from '#lib/SelectedMessagesList.svelte';
 	import TimelineFilters from '#lib/filter.svelte';
 	import TimelineChart from '#lib/TimelineChart.svelte';
+	import HourHeatmap from '#lib/HourHeatmap.svelte';
 	import type { Message } from '#lib/types.js';
 	import { allMessages } from '#lib/data/index.js';
 	import { messageId, searchContent, regexSearch } from '#lib/search.js';
@@ -119,6 +120,8 @@
 				<div class="overflow-x-auto">
 					<TimelineChart data={filteredData} bind:visibleStart bind:visibleEnd />
 				</div>
+
+				<HourHeatmap data={filteredData} />
 
 				{#if visibleData.length === 0}
 					<div role="status" class="mt-4 alert alert-soft alert-info">

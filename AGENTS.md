@@ -35,6 +35,8 @@ src/
     TimelineChart.svelte      # Main chart: chatGroups, zoom/pan, glyphs, attention line
     TimelineMinimap.svelte    # Overview + brush (shows ALL chats)
     SelectedMessagesList.svelte # Viewport messages table + CSV export
+    HourHeatmap.svelte        # Time-of-day heatmap (group rows × 24 hours)
+    hourly.ts                 # Hour-of-day aggregation for the heatmap
     filter.svelte             # Multi-select filter UI + search box (text/RegEx)
     search.ts                 # MiniSearch index + regex search over content
     types.ts                  # Message type
@@ -79,6 +81,16 @@ Entry point [`src/routes/+page.svelte`](src/routes/+page.svelte) → [`TimelineC
 - **Message glyphs**: circle = incoming, triangle = outgoing, dashed square = not sent. Colored by `platform` via an ordinal `schemeCategory10` scale. The dashed **attention line** (`chronologicalMessages`) connects messages across chats in time order.
 - `visibleStart`/`visibleEnd` are bound out of `TimelineChart` to `+page.svelte`, which feeds `SelectedMessagesList` (only messages inside the viewport, with CSV export).
 
+## Time-of-Day Heatmap
+
+[`HourHeatmap.svelte`](src/lib/HourHeatmap.svelte) sits below the timeline and maps **all filtered messages** (`filteredData` — sidebar filters + search apply, timeline viewport does not) onto the 24 hours of the day. Logic lives in [`src/lib/hourly.ts`](src/lib/hourly.ts).
+
+- **Columns** = hour 0–23 read directly from `t` (`hourOf`), aggregated across all days.
+- **Rows** = the "Group by" select (`groupByOptions`): none, direction, platform, type, language, chat, has emoji, day. `buildHourMatrix` returns per-row hour counts + totals.
+- **Has emoji** (`hasEmoji`) = the `type` field matches `/emoji|emoticon/i` (type field only, not content).
+- **Cell value** (`cellValue`): `count`, `row` (share of the row's messages in that hour — use this to compare groups of different size) or `hour` (share of the hour's messages in that row). Color = `d3.scaleSequential` over `[0, max]`; empty cells are faint.
+- To add a grouping, append an entry to `groupByOptions` (and a fixed order in `compareRows` if needed).
+
 ## Filters
 
 Filter UI lives in [`src/lib/filter.svelte`](src/lib/filter.svelte); state and predicate live in [`src/routes/+page.svelte`](src/routes/+page.svelte). All filters are multi-select checkbox groups, default all-selected, with a "Reset all" button and summary badges.
@@ -109,9 +121,9 @@ Use D3 for **data and math** only. Render with Svelte:
 
 ```svelte
 <script lang="ts">
-  import * as d3 from 'd3';
-  let { data } = $props();
-  const xScale = $derived(d3.scaleTime().domain([start, end]).range([0, width]));
+	import * as d3 from 'd3';
+	let { data } = $props();
+	const xScale = $derived(d3.scaleTime().domain([start, end]).range([0, width]));
 </script>
 
 <svg>
