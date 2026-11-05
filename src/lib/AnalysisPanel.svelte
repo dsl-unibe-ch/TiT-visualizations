@@ -9,12 +9,11 @@
 	const tabs = [
 		{ id: 'hours', label: 'Time of day' },
 		{ id: 'responses', label: 'Response time' },
-		{ id: 'switching', label: 'Chat switching' },
 		{ id: 'bursts', label: 'Bursts' }
 	] as const;
 
 	let active = $state<(typeof tabs)[number]['id']>('hours');
-	// Shared between Chat switching and Bursts so both use the same burst definition.
+	// Shared between Bursts so both use the same burst definition.
 	let burstGap = $state(10);
 </script>
 
