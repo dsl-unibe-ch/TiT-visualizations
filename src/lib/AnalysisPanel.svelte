@@ -2,7 +2,6 @@
 	import type { Message } from './types.js';
 	import HourHeatmap from './HourHeatmap.svelte';
 	import ResponseTimes from './ResponseTimes.svelte';
-	import ChatSwitching from './ChatSwitching.svelte';
 	import BurstsView from './BurstsView.svelte';
 
 	let { data }: { data: Message[] } = $props();
@@ -40,8 +39,6 @@
 			<HourHeatmap {data} />
 		{:else if active === 'responses'}
 			<ResponseTimes {data} />
-		{:else if active === 'switching'}
-			<ChatSwitching {data} bind:gap={burstGap} />
 		{:else}
 			<BurstsView {data} bind:gap={burstGap} />
 		{/if}

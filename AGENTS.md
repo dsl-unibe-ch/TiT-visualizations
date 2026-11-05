@@ -38,10 +38,9 @@ src/
     AnalysisPanel.svelte      # Tabbed analysis card below the timeline
     HourHeatmap.svelte        # Tab: time-of-day heatmap (group rows × 24 hours)
     ResponseTimes.svelte      # Tab: her reply-time strip plot
-    ChatSwitching.svelte      # Tab: chat → chat transition matrix
     BurstsView.svelte         # Tab: burst stats, scatter + histogram
     hourly.ts                 # Hour-of-day aggregation + shared groupByOptions
-    analysis/                 # Pure logic: time.ts, responses.ts, switching.ts, bursts.ts
+    analysis/                 # Pure logic: time.ts, responses.ts, bursts.ts
     filter.svelte             # Multi-select filter UI + search box (text/RegEx)
     search.ts                 # MiniSearch index + regex search over content
     types.ts                  # Message type
@@ -102,11 +101,6 @@ Entry point [`src/routes/+page.svelte`](src/routes/+page.svelte) → [`TimelineC
 
 - `computeReplies(messages, maxGapMin)`: per chat, a reply is her first `outgoing` message after a run of `incoming` ones; time is measured from the **first** incoming of that run. Replies slower than `maxGapMin` (UI default 8 min) are counted in `excluded`, not shown.
 - Strip plot: one row per group (`groupByOptions` minus direction, applied to her reply message), dots per reply, median bar.
-
-### Chat switching — [`ChatSwitching.svelte`](src/lib/ChatSwitching.svelte) / [`analysis/switching.ts`](src/lib/analysis/switching.ts)
-
-- `computeTransitions(messages, gapMin)`: for consecutive messages (any chat, chronological) at most `gapMin` apart, counts `matrix[from][to]`; diagonal = staying in a chat. Returns switches, stays, switch rate.
-- Rendered as a chat × chat matrix (count / % of row); color scale uses the off-diagonal max so switches stay visible.
 
 ### Bursts — [`BurstsView.svelte`](src/lib/BurstsView.svelte) / [`analysis/bursts.ts`](src/lib/analysis/bursts.ts)
 
